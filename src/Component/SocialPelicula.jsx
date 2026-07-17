@@ -137,9 +137,13 @@ export const SocialPelicula = () => {
   const backLabel = location.state?.returnLabel || 'Volver a Social';
 
   useEffect(() => {
-    if (location.state?.openReview) {
+    if (!location.state?.openReview) return undefined;
+
+    const timer = globalThis.window.setTimeout(() => {
       setReviewOpen(true);
-    }
+    }, 0);
+
+    return () => globalThis.window.clearTimeout(timer);
   }, [location.state?.openReview]);
 
   useEffect(() => {
