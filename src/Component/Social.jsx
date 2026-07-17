@@ -74,6 +74,37 @@ const getReviewMovieTitle = (review) => getReviewMovie(review)?.titulo || 'Pelí
 const getReviewPoster = (review) => getReviewMovie(review)?.url_poster || getReviewMovie(review)?.imagenPoster || '';
 const getReviewStars = (review) => Number(review?.puntuacion_estrellas ?? review?.rating ?? 0);
 const getReviewText = (review) => review?.comentario ?? review?.texto ?? '';
+const hasReviewText = (review) => Boolean(String(getReviewText(review)).trim());
+const getReviewDate = (review) => review?.fechaPublicacion || review?.fecha_publicacion || review?.created_at || review?.fecha_creacion || null;
+
+const reviewRelativeTimeFormatter = new Intl.RelativeTimeFormat('es', {
+  numeric: 'always',
+});
+
+const formatReviewAge = (dateValue) => {
+  if (!dateValue) return 'Fecha no disponible';
+
+  const reviewDate = new Date(dateValue);
+  if (Number.isNaN(reviewDate.getTime())) return 'Fecha no disponible';
+
+  const differenceMs = reviewDate.getTime() - Date.now();
+  const absoluteDifference = Math.abs(differenceMs);
+
+  if (absoluteDifference < 10 * 1000) return 'hace unos segundos';
+
+  const units = [
+    ['year', 365 * 24 * 60 * 60 * 1000],
+    ['month', 30 * 24 * 60 * 60 * 1000],
+    ['week', 7 * 24 * 60 * 60 * 1000],
+    ['day', 24 * 60 * 60 * 1000],
+    ['hour', 60 * 60 * 1000],
+    ['minute', 60 * 1000],
+    ['second', 1000],
+  ];
+  const [unit, unitMs] = units.find(([, milliseconds]) => absoluteDifference >= milliseconds) || units.at(-1);
+
+  return reviewRelativeTimeFormatter.format(Math.round(differenceMs / unitMs), unit);
+};
 
 const formatActivityDate = (value) => {
   if (!value) return 'Fecha no disponible';
@@ -469,7 +500,7 @@ export const Social = () => {
     reviewsRequest
       .then(([reviews, interactions]) => {
         if (!active) return;
-        setUserReviews(reviews);
+        setUserReviews(reviews.filter(hasReviewText));
         setInteractionsMap(Object.fromEntries(
           interactions.map((item) => [item.id_pelicula, item])
         ));
@@ -548,16 +579,18 @@ export const Social = () => {
 
         const moviesById = Object.fromEntries(movieEntries);
         const followedProfilesById = Object.fromEntries(followedProfileEntries);
-        const reviewActivities = reviews.map((review) => ({
+        const visibleReviews = reviews.filter(hasReviewText);
+        const visibleFollowingReviews = followingReviews.filter(hasReviewText);
+        const reviewActivities = visibleReviews.map((review) => ({
           id: `review-${review.id}`,
           type: 'review',
           icon: MessageSquareText,
           title: `Reseno ${review.movie?.titulo || 'una pelicula'}`,
-          detail: review.texto || 'Sin comentario.',
+          detail: review.texto,
           date: review.fechaPublicacion,
           movie: review.movie,
         }));
-        const followingReviewActivities = followingReviews.map((review) => {
+        const followingReviewActivities = visibleFollowingReviews.map((review) => {
           const followedName = String(review.usuario || 'Usuario').replace(/^@/, '');
           const hasComment = Boolean(review.texto?.trim());
           const rating = Number(review.rating || 0);
@@ -579,7 +612,7 @@ export const Social = () => {
             movie: review.movie,
           };
         });
-        const likeActivities = reviews
+        const likeActivities = visibleReviews
           .filter((review) => Number(review.likes || 0) > 0)
           .map((review) => ({
             id: `review-like-${review.id}`,
@@ -644,7 +677,7 @@ export const Social = () => {
           };
         });
 
-        setUserReviews(reviews);
+        setUserReviews(visibleReviews);
         const profileActivityItems = [
           ...reviewActivities,
           ...likeActivities,
@@ -1945,8 +1978,8 @@ export const Social = () => {
                 </div>
               </div>
 
-              <div className="mb-4 flex flex-wrap items-center gap-3">
-                <label className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-lg border border-slate-700 bg-slate-900 px-3 py-2">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <label className="flex min-h-11 w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 sm:flex-1">
                   <Search className="h-4 w-4 shrink-0 text-white/40" />
                   <input
                     value={reviewFilter}
@@ -1955,29 +1988,31 @@ export const Social = () => {
                     className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/40"
                   />
                 </label>
-                {reviewsScope === 'profile' && (
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:w-auto sm:shrink-0">
+                  {reviewsScope === 'profile' && (
+                    <button
+                      type="button"
+                      onClick={() => setReviewShowOnlyFav((v) => !v)}
+                      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-colors sm:px-4 sm:text-sm ${
+                        reviewShowOnlyFav
+                          ? 'border-red-500/50 bg-red-500/15 text-red-300 hover:bg-red-500/25'
+                          : 'border-slate-700 bg-slate-900 text-white/80 hover:bg-slate-800'
+                      }`}
+                    >
+                      <Heart className={`h-4 w-4 ${reviewShowOnlyFav ? 'fill-red-400 text-red-400' : ''}`} />
+                      {reviewShowOnlyFav ? 'Favoritas' : 'Todas'}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => setReviewShowOnlyFav((v) => !v)}
-                    className={`inline-flex shrink-0 items-center gap-2 rounded-lg border px-4 py-2 text-sm font-bold transition-colors ${
-                      reviewShowOnlyFav
-                        ? 'border-red-500/50 bg-red-500/15 text-red-300 hover:bg-red-500/25'
-                        : 'border-slate-700 bg-slate-900 text-white/80 hover:bg-slate-800'
-                    }`}
+                    onClick={() => setReviewSort((s) => (s === 'desc' ? 'asc' : 'desc'))}
+                    className={`${reviewsScope === 'profile' ? '' : 'col-span-2'} inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-white/80 transition-colors hover:bg-slate-800 sm:px-4 sm:text-sm`}
                   >
-                    <Heart className={`h-4 w-4 ${reviewShowOnlyFav ? 'fill-red-400 text-red-400' : ''}`} />
-                    {reviewShowOnlyFav ? 'Solo favoritas' : 'Todas'}
+                    <span>★</span>
+                    <span className="truncate">{reviewSort === 'desc' ? 'Mejor calificadas' : 'Peor calificadas'}</span>
+                    <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${reviewSort === 'asc' ? 'rotate-180' : ''}`} />
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setReviewSort((s) => (s === 'desc' ? 'asc' : 'desc'))}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-bold text-white/80 transition-colors hover:bg-slate-800"
-                >
-                  <span>★</span>
-                  {reviewSort === 'desc' ? 'Mejor calificadas' : 'Peor calificadas'}
-                  <ChevronDown className={`h-4 w-4 transition-transform ${reviewSort === 'asc' ? 'rotate-180' : ''}`} />
-                </button>
+                </div>
               </div>
 
               {reviewsLoading ? (
@@ -2018,6 +2053,7 @@ export const Social = () => {
                       const movieTitle = getReviewMovieTitle(review);
                       const reviewText = getReviewText(review);
                       const authorName = String(review.usuario || '').replace(/^@/, '');
+                      const reviewDate = getReviewDate(review);
 
                       return (
                         <article
@@ -2049,6 +2085,12 @@ export const Social = () => {
                             {reviewsScope === 'following' && authorName && (
                               <p className="mt-0.5 text-xs font-bold text-sky-300">@{authorName}</p>
                             )}
+                            <time
+                              dateTime={reviewDate || undefined}
+                              className="mt-0.5 block text-xs font-semibold text-white/40"
+                            >
+                              {formatReviewAge(reviewDate)}
+                            </time>
 
                             <div className="mt-1 flex items-center gap-2">
                               {reviewsScope === 'profile' && isFav && <Heart className="h-4 w-4 shrink-0 fill-red-500 text-red-500" />}
@@ -2060,7 +2102,7 @@ export const Social = () => {
                             </div>
 
                             <p className={`mt-2 text-sm font-medium leading-relaxed text-white/70 ${!isExpanded ? 'line-clamp-5' : ''}`}>
-                              {reviewText || 'Sin comentario.'}
+                              {reviewText}
                             </p>
 
                             {reviewText && reviewText.length > 300 && (
@@ -2091,4 +2133,3 @@ export const Social = () => {
 };
 
 export default Social;
-

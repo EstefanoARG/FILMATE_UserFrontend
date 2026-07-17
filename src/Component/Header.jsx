@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {
   ChevronDown,
   CircleUserRound,
+  Download,
   LogOut,
   MapPin,
   Menu,
@@ -16,7 +17,7 @@ import {
 import { QRCodeCanvas } from 'qrcode.react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { clearAuthSession, getAuthSession, isRegisteredSession } from './authSession';
-import { getUserPurchases } from './filmateApi';
+import { downloadTicketPdf, getUserPurchases } from './filmateApi';
 import { getSessionUserId, mergePurchaseHistory, PURCHASE_HISTORY_UPDATED, readPurchaseHistory } from './purchaseHistory';
 import PwaInstallButton from './PwaInstallButton.jsx';
 
@@ -65,6 +66,31 @@ const purchaseShape = PropTypes.shape({
 });
 
 function PurchaseDetail({ purchase }) {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
+
+  const handleDownloadPdf = async () => {
+    if (!purchase.transactionId || isDownloading) return;
+
+    try {
+      setDownloadError('');
+      setIsDownloading(true);
+      const blob = await downloadTicketPdf(purchase.transactionId);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `ticket-transaccion-${purchase.transactionId}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      globalThis.window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      setDownloadError(error?.message || 'No se pudo descargar el PDF.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <section className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
@@ -83,6 +109,33 @@ function PurchaseDetail({ purchase }) {
             <p className="text-2xl font-black text-white">{formatCurrency(purchase.total)}</p>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-xl border border-blue-500/25 bg-blue-500/10 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-black text-white">Comprobante PDF</p>
+            <p className="mt-1 text-sm font-semibold text-white/55">
+              {purchase.transactionId
+                ? `Disponible para la transacción #${purchase.transactionId}.`
+                : 'Esta compra no tiene una transacción registrada en la base de datos.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={!purchase.transactionId || isDownloading}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-white/55"
+          >
+            <Download className="h-4 w-4" />
+            {isDownloading ? 'Descargando...' : 'Descargar PDF'}
+          </button>
+        </div>
+        {downloadError && (
+          <p className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100">
+            {downloadError}
+          </p>
+        )}
       </section>
 
       {purchase.booking && (
