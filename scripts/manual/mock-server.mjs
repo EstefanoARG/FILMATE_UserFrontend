@@ -422,6 +422,17 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (path === '/client/showtimes/range' && req.method === 'GET') {
+    const startDate = (url.searchParams.get('start_datetime') || new Date().toISOString()).slice(0, 10);
+    const result = Array.from({ length: 14 }, (_, index) => {
+      const date = new Date(`${startDate}T00:00:00`);
+      date.setDate(date.getDate() + index);
+      return showtimesFor(date.toISOString().slice(0, 10));
+    }).flat();
+    json(res, 200, result);
+    return;
+  }
+
   const byCinemaMatch = path.match(/^\/client\/showtimes\/cinema\/(\d+)$/);
   if (byCinemaMatch && req.method === 'GET') {
     const date = new Date().toISOString().slice(0, 10);
