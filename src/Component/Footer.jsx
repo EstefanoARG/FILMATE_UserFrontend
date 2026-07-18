@@ -1,13 +1,27 @@
+import { useState } from 'react';
 import { Music2, X, BookOpen, ChevronRight } from 'lucide-react';
+
+const itemDetails = {
+  'Quienes somos':
+    'Filmate es una cadena peruana de cines enfocada en funciones digitales, reserva de asientos en tiempo real, dulceria online y una comunidad donde los usuarios pueden calificar peliculas y compartir resenas.',
+  'Nuestra historia':
+    'Nacimos en Lima con la idea de unir la experiencia de ir al cine con herramientas digitales simples: cartelera actualizada, compra rapida, seleccion de butacas y recomendaciones segun tus gustos.',
+  'Contactanos':
+    'Central telefonica: (01) 640-2525. Atencion al cliente: atencionalcliente@filmate.pe. Horario de soporte: lunes a domingo de 9:00 a.m. a 11:00 p.m.',
+  'Trabaja con nosotros':
+    'Buscamos talento para atencion en cines, operaciones, soporte digital, marketing y administracion. Puedes escribir a talento@filmate.pe indicando el puesto y sede de interes.',
+  'Libro de reclamaciones':
+    'Si tuviste un inconveniente con una compra, funcion, dulceria o atencion en sede, registra tu reclamo con tus datos, codigo de compra y detalle del caso. Responderemos dentro del plazo legal correspondiente.',
+};
 
 const footerGroups = [
   {
     title: 'SOBRE NOSOTROS',
-    items: ['Quiénes somos', 'Nuestra historia'],
+    items: ['Quienes somos', 'Nuestra historia'],
   },
   {
     title: 'CONTACTO',
-    items: ['Contáctanos', 'Trabaja con nosotros'],
+    items: ['Contactanos', 'Trabaja con nosotros'],
   },
   {
     title: 'AYUDA',
@@ -24,6 +38,12 @@ const socialItems = [
 ];
 
 export const Footer = () => {
+  const [openItem, setOpenItem] = useState('');
+
+  const toggleItem = (item) => {
+    setOpenItem((currentItem) => (currentItem === item ? '' : item));
+  };
+
   return (
     <footer className="border-t border-slate-800 bg-slate-950 px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -35,20 +55,33 @@ export const Footer = () => {
               </h3>
 
               <div className="space-y-1 sm:space-y-3">
-                {group.items.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    className="flex items-center gap-2 text-left text-base font-semibold text-slate-100 transition-colors hover:text-blue-300 sm:text-lg lg:text-2xl"
-                  >
-                    {item === 'Libro de reclamaciones' ? (
-                      <BookOpen className="h-5 w-5 text-blue-300 sm:h-6 sm:w-6" />
-                    ) : (
-                      <ChevronRight className="h-5 w-5 text-slate-500" />
-                    )}
-                    <span>{item}</span>
-                  </button>
-                ))}
+                {group.items.map((item) => {
+                  const isOpen = openItem === item;
+
+                  return (
+                    <div key={item}>
+                      <button
+                        type="button"
+                        onClick={() => toggleItem(item)}
+                        aria-expanded={isOpen}
+                        className="flex w-full items-center gap-2 text-left text-base font-semibold text-slate-100 transition-colors hover:text-blue-300 sm:text-lg lg:text-2xl"
+                      >
+                        {item === 'Libro de reclamaciones' ? (
+                          <BookOpen className="h-5 w-5 shrink-0 text-blue-300 sm:h-6 sm:w-6" />
+                        ) : (
+                          <ChevronRight className={`h-5 w-5 shrink-0 text-slate-500 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                        )}
+                        <span>{item}</span>
+                      </button>
+
+                      {isOpen && (
+                        <div className="mt-2 rounded-lg border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm font-medium leading-relaxed text-slate-300 sm:text-base">
+                          {itemDetails[item]}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -57,11 +90,11 @@ export const Footer = () => {
         <div className="mt-8 flex flex-col gap-6 border-t border-slate-800 pt-6 sm:mt-12 sm:gap-8 sm:pt-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-1 text-slate-100">
             <p className="text-sm font-bold sm:text-base lg:text-lg">Filmate S.A. | RUC 20429683581</p>
-            <p className="text-sm font-bold sm:text-base lg:text-lg">Todos los derechos reservados 2025</p>
+            <p className="text-sm font-bold sm:text-base lg:text-lg">Todos los derechos reservados 2026</p>
           </div>
 
           <div className="flex flex-col gap-4 lg:items-end">
-            <p className="text-lg font-bold text-white sm:text-xl lg:text-2xl">Síguenos en:</p>
+            <p className="text-lg font-bold text-white sm:text-xl lg:text-2xl">Siguenos en:</p>
             <div className="flex flex-wrap items-center gap-4">
               {socialItems.map((social) => {
                 const Icon = social.icon;

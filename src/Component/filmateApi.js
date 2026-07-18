@@ -14,6 +14,7 @@ const getWsBaseUrl = () => {
   if (globalThis.window === undefined) return '';
 
   const { location } = globalThis.window;
+  if (location.hostname.endsWith('.devtunnels.ms')) return '';
 
   const apiPathSeparator = API_BASE_URL.startsWith('/') ? '' : '/';
   const apiUrl = API_BASE_URL.startsWith('http')
@@ -928,6 +929,48 @@ export async function getShowtimesByDate(targetDate, { cinemaId, movieId, forceR
   const queryString = query.toString();
   const querySuffix = queryString ? `?${queryString}` : '';
   const path = `/client/showtimes/date/${targetDate}${querySuffix}`;
+  const cached = showtimeDateCache.get(path);
+
+  if (!forceRefresh && cached && Date.now() - cached.createdAt < SHOWTIME_CACHE_TTL_MS) {
+    return cached.promise;
+  }
+
+  const promise = request(path)
+    .then((data) => {
+      const funciones = Array.isArray(data) ? data : extractShowtimeList(data);
+      const now = Date.now();
+
+      return funciones
+        .map(normalizeShowtime)
+        .filter((showtime) => {
+          const timestamp = parseShowtimeTimestamp(showtime.fecha_hora || showtime.fecha_hora_inicio || '');
+          return !Number.isFinite(timestamp) || timestamp > now;
+        });
+    })
+    .catch((error) => {
+      showtimeDateCache.delete(path);
+      throw error;
+    });
+
+  showtimeDateCache.set(path, { createdAt: Date.now(), promise });
+  return promise;
+}
+
+export async function getShowtimesByRange(startDatetime, endDatetime, { cinemaId, movieId, forceRefresh = false } = {}) {
+  const query = new URLSearchParams({
+    start_datetime: startDatetime,
+    end_datetime: endDatetime,
+  });
+
+  if (cinemaId !== undefined && cinemaId !== null && cinemaId !== '') {
+    query.set('cinema_id', String(cinemaId));
+  }
+
+  if (movieId !== undefined && movieId !== null && movieId !== '') {
+    query.set('movie_id', String(movieId));
+  }
+
+  const path = `/client/showtimes/range?${query.toString()}`;
   const cached = showtimeDateCache.get(path);
 
   if (!forceRefresh && cached && Date.now() - cached.createdAt < SHOWTIME_CACHE_TTL_MS) {

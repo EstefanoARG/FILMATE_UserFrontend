@@ -20,7 +20,6 @@ import {
 } from './filmateApi';
 import { getAuthSession } from './authSession';
 import { addPurchaseToHistory, getSessionUserId } from './purchaseHistory';
-import { buildLocalSnackOnlyCheckout } from './dulceriaFlowUtils';
 
 const productosData = {
   combos: [],
@@ -50,6 +49,25 @@ const paymentOptions = [
     icon: Smartphone,
   },
 ];
+
+const fallbackPaymentTestMethods = {
+  tarjetas: [
+    {
+      numero: '4551700000000004',
+      marca: 'Visa',
+      cvv: '123',
+      vencimiento: '11/30',
+      resultado: 'aprobado',
+    },
+  ],
+  yape: [
+    {
+      celular: '999111222',
+      resultado: 'aprobado',
+    },
+  ],
+  yape_otp_valido: '123456',
+};
 
 const BOOKING_CONTEXT_KEY = 'filmate-booking-context';
 
@@ -461,8 +479,15 @@ function PaymentModal({
     });
   };
 
-  const approvedCard = paymentTestMethods?.tarjetas?.find((card) => card.resultado === 'aprobado');
-  const approvedYape = paymentTestMethods?.yape?.find((wallet) => wallet.resultado === 'aprobado');
+  const demoPaymentMethods = {
+    ...fallbackPaymentTestMethods,
+    ...(paymentTestMethods || {}),
+    tarjetas: paymentTestMethods?.tarjetas?.length ? paymentTestMethods.tarjetas : fallbackPaymentTestMethods.tarjetas,
+    yape: paymentTestMethods?.yape?.length ? paymentTestMethods.yape : fallbackPaymentTestMethods.yape,
+    yape_otp_valido: paymentTestMethods?.yape_otp_valido || fallbackPaymentTestMethods.yape_otp_valido,
+  };
+  const approvedCard = demoPaymentMethods.tarjetas.find((card) => card.resultado === 'aprobado');
+  const approvedYape = demoPaymentMethods.yape.find((wallet) => wallet.resultado === 'aprobado');
   const applyDemoCredentials = () => {
     if (selectedPaymentMethod === 'tarjeta' && approvedCard) {
       setCardForm((current) => ({
@@ -480,7 +505,7 @@ function PaymentModal({
       setWalletForm({
         phone: approvedYape.celular || '',
         document: '74859612',
-        approvalCode: paymentTestMethods?.yape_otp_valido || '',
+        approvalCode: demoPaymentMethods.yape_otp_valido || '',
       });
     }
   };
@@ -1580,26 +1605,46 @@ export const Dulceria = () => {
       setCheckoutError('');
       setIsProcessingPayment(true);
 
+      if (!userId) {
+        setCheckoutError('Debes iniciar sesión para completar la compra.');
+        return;
+      }
+
+      const email = authSession?.user?.correo || authSession?.user?.correo_electronico;
+      if (!email) {
+        throw new Error('Tu cuenta no tiene un correo válido para procesar el pago.');
+      }
+
+      const validationResult = await refreshCommercialData({ includeSnacks: true });
+      if (validationResult.pricesChanged || validationResult.stockAdjusted) {
+        setCheckoutView(checkoutViews.verification);
+        openNotice(
+          'Pedido actualizado',
+          'Los precios o la disponibilidad cambiaron antes del cobro. Confirma nuevamente el resumen.'
+        );
+        return;
+      }
+
       const paymentMethodLabel = paymentData.metodo_pago || selectedPayment?.label || selectedPaymentMethod;
       const tokenizedPayment = paymentData.paymentKind === 'tarjeta'
         ? await tokenizeCardPayment(paymentData.tokenizationPayload || {})
         : await tokenizeYapePayment(paymentData.tokenizationPayload || {});
 
-      const localCheckout = buildLocalSnackOnlyCheckout({
-        pedidoNumber,
-        total: paymentTotal,
-        carrito,
-        paymentMethod: paymentMethodLabel,
+      const response = await checkoutOrder({
+        id_usuario: userId,
+        ids_asientos: [],
+        metodo_pago: paymentMethodLabel,
+        monto_confiteria: paymentTotal,
+        token_pago: tokenizedPayment.token,
+        email,
+        snacks: carrito.map((item) => ({
+          id_producto: item.id,
+          cantidad: item.cantidad,
+        })),
       });
 
-      setCheckoutResult({
-        ...localCheckout,
-        token_pago: tokenizedPayment.token,
-      });
-      recordPurchase({
-        ...localCheckout,
-        token_pago: tokenizedPayment.token,
-      }, {
+      setCheckoutResult(response);
+      recordPurchase(response, {
         ...paymentData,
         metodo_pago: paymentMethodLabel,
       });
@@ -1766,15 +1811,6 @@ export const Dulceria = () => {
               {pageSubtitle}
             </p>
           </div>
-
-          {!isSeatFlow && (
-            <div className="mb-8 rounded-2xl border border-emerald-400/40 bg-emerald-400/10 px-5 py-4 text-emerald-100">
-              <p className="font-bold">Compra de dulcería lista para finalizar.</p>
-              <p className="mt-1 text-sm text-emerald-100/80">
-                Puedes pagar directamente tu pedido de snacks sin necesidad de una entrada o reserva previa.
-              </p>
-            </div>
-          )}
 
           {snacksError && (
             <div className="mb-8 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-amber-100">

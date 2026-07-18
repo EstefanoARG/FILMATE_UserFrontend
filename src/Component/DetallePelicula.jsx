@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { AlertTriangle, ArrowLeft, ArrowRight, Clock3, Clapperboard, Play, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Clock3, Clapperboard, MessageSquareText, Play, X } from 'lucide-react';
 import Header from './Header.jsx';
 import Footer from './Footer.jsx';
 import StarRatingDisplay from './StarRatingDisplay.jsx';
@@ -152,6 +152,7 @@ const splitCsvValue = (value) =>
 
 const getListValue = (listValue, fallbackValue) =>
     Array.isArray(listValue) && listValue.length ? listValue : splitCsvValue(fallbackValue);
+const hasReviewText = (review) => Boolean(String(review?.texto || review?.comentario || '').trim());
 
 const reviewRelativeTimeFormatter = new Intl.RelativeTimeFormat('es', {
     numeric: 'always',
@@ -231,7 +232,7 @@ const ReviewCard = ({ review, modal = false }) => {
                 </div>
             </div>
             <p className={`${modal ? '' : 'text-sm'} whitespace-pre-wrap text-gray-300`}>
-                {review.texto || 'Sin comentario.'}
+                {review.texto}
             </p>
         </article>
     );
@@ -308,9 +309,9 @@ const getCinemaEntry = ({ funcion, room, cinemaFromCatalog, cinemaName }) => {
 };
 
 const getSeatGap = ({ maxSeatsInRow, seatGridWidth }) => {
+    if (seatGridWidth > 0 && seatGridWidth < 520) return 6;
     if (maxSeatsInRow > 20) return 1;
     if (maxSeatsInRow > 14) return 2;
-    if (seatGridWidth < 520) return 1;
     return 6;
 };
 
@@ -453,7 +454,7 @@ export const DetallePelicula = () => {
                 const movieReviews = await getMovieReviews(reviewMovieId);
 
                 if (!isMounted) return;
-                setReviews(movieReviews);
+                setReviews(movieReviews.filter(hasReviewText));
             } catch (err) {
                 if (!isMounted) return;
                 console.error('Error cargando reseñas de la película:', err);
@@ -554,7 +555,7 @@ export const DetallePelicula = () => {
                 setShowtimeCatalog(catalogs.filter((item) => item.funciones.length > 0));
             } catch (err) {
                 if (!isMounted) return;
-                console.error('Error cargando horarios reales:', err);
+                console.error('Error cargando horarios:', err);
                 setShowtimesError('No se pudieron cargar los horarios disponibles.');
                 setShowtimeCatalog([]);
             } finally {
@@ -684,7 +685,7 @@ export const DetallePelicula = () => {
         };
 
         connect();
-        pollTimer = globalThis.window.setInterval(refreshSeatMap, 15_000);
+        pollTimer = globalThis.window.setInterval(refreshSeatMap, 8_000);
 
         return () => {
             stopped = true;
@@ -765,6 +766,34 @@ export const DetallePelicula = () => {
     const actores = getListValue(pelicula.actores, pelicula.reparto);
     const textoTrailer = pelicula.trailer || 'TRÁILER OFICIAL';
     const trailerUrl = pelicula.trailerUrl || '';
+    const socialMovieId = pelicula.id || pelicula.id_pelicula || movieId;
+    const socialMovieState = {
+        ...pelicula,
+        id: socialMovieId,
+        imagenPoster: poster,
+        imagenTrailer: trailerImg,
+        titulo,
+        rating,
+        generos,
+        genero: generos.join(', '),
+        sinopsis,
+        director,
+        reparto: (actores.length ? actores : ['Por definir']).join(', '),
+    };
+
+    const openSocialReview = () => {
+        if (!socialMovieId) return;
+
+        navigate(`/social/pelicula/${socialMovieId}`, {
+            state: {
+                movie: socialMovieState,
+                openReview: true,
+                fromMovieDetails: true,
+                returnTo: `/menuPrincipal/detallePelicula/${socialMovieId}`,
+                returnLabel: 'Volver a funciones',
+            },
+        });
+    };
 
     const generoChips = generos.length ? generos : ['Género no disponible'];
     const repartoLista = actores.length ? actores : ['Por definir'];
@@ -926,10 +955,11 @@ export const DetallePelicula = () => {
     const maxSeatsInRow = Math.max(1, ...backendSeatRows.map(([, seats]) => seats.length));
     const seatGap = getSeatGap({ maxSeatsInRow, seatGridWidth });
     const usesCompactSeatGrid = seatGridWidth > 0 && seatGridWidth < 520;
-    const seatLabelWidth = usesCompactSeatGrid ? 18 : 30;
+    const mobileSeatTouchSize = 36;
+    const seatLabelWidth = usesCompactSeatGrid ? 24 : 30;
     const availableSeatWidth = Math.max(0, seatGridWidth - seatLabelWidth - (seatGap * (maxSeatsInRow - 1)) - 12);
     const responsiveSeatSize = usesCompactSeatGrid
-        ? 24
+        ? mobileSeatTouchSize
         : Math.max(18, Math.min(50, Math.floor(availableSeatWidth / maxSeatsInRow) || 28));
 
     const renderSeat = (seat, seatSize = 36) => {
@@ -951,7 +981,7 @@ export const DetallePelicula = () => {
                 title={`${seat.fila}${seatNumber} - ${seat.estado ?? 'Disponible'}`}
                 data-compact-seat="true"
                 className={[
-                    'flex h-6 w-6 min-h-0 min-w-0 items-center justify-center rounded-full bg-transparent border-none p-0 md:h-auto md:w-auto',
+                    'flex h-9 w-9 min-h-0 min-w-0 items-center justify-center rounded-full bg-transparent border-none p-0 md:h-auto md:w-auto',
                     'transition-transform duration-100 focus-visible:outline focus-visible:outline-2',
                     'focus-visible:outline-offset-2 focus-visible:outline-teal-500 focus-visible:rounded',
                     !unavailable && 'cursor-pointer hover:-translate-y-0.5 active:scale-95',
@@ -965,7 +995,7 @@ export const DetallePelicula = () => {
                   Apoyabrazos a los lados del cojín.
                 */}
                 <span
-                    className={`inline-flex h-6 w-6 items-center justify-center rounded-full border text-[9px] font-black leading-none md:hidden ${
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-black leading-none shadow-sm md:hidden ${
                         selected
                             ? 'border-emerald-300 bg-emerald-600 text-white'
                             : unavailable
@@ -1187,25 +1217,29 @@ export const DetallePelicula = () => {
                                                     const sortedSeats = seats
                                                         .slice()
                                                         .sort((a, b) => Number(getSeatNumber(a)) - Number(getSeatNumber(b)));
+                                                    const mobileRowWidth = seatLabelWidth + seatGap + (sortedSeats.length * mobileSeatTouchSize) + ((sortedSeats.length - 1) * seatGap);
 
                                                     return (
                                                         <div
                                                             key={row}
-                                                            className="grid min-w-0 items-center"
+                                                            className="grid items-center md:min-w-0"
                                                             style={{
-                                                                gridTemplateColumns: `${seatLabelWidth}px minmax(0, 1fr)`,
+                                                                gridTemplateColumns: usesCompactSeatGrid
+                                                                    ? `${seatLabelWidth}px max-content`
+                                                                    : `${seatLabelWidth}px minmax(0, 1fr)`,
                                                                 columnGap: `${seatGap}px`,
+                                                                minWidth: usesCompactSeatGrid ? `${mobileRowWidth}px` : undefined,
                                                             }}
                                                         >
-                                                            <div className="relative z-10 text-center text-[0.65rem] font-black uppercase text-[#7fb0ff] sm:text-lg">
+                                                            <div className="sticky left-0 z-10 flex h-9 items-center justify-center bg-[#061321] text-center text-[0.7rem] font-black uppercase text-[#7fb0ff] md:static md:h-auto md:bg-transparent sm:text-lg">
                                                                 {row}
                                                             </div>
 
                                                             <div
-                                                                className="grid min-w-0 items-center"
+                                                                className="grid items-center md:min-w-0"
                                                                 style={{
                                                                     gridTemplateColumns: usesCompactSeatGrid
-                                                                        ? `repeat(${sortedSeats.length}, minmax(0, 1fr))`
+                                                                        ? `repeat(${sortedSeats.length}, ${mobileSeatTouchSize}px)`
                                                                         : `repeat(${sortedSeats.length}, minmax(0, 1fr))`,
                                                                     columnGap: `${seatGap}px`,
                                                                 }}
@@ -1336,6 +1370,14 @@ export const DetallePelicula = () => {
                                     ))}
                                 </div>
                                 {renderStars(rating, true)}
+                                <button
+                                    type="button"
+                                    onClick={openSocialReview}
+                                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2a6bb7] px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-950/30 transition-all duration-300 hover:scale-[1.02] hover:bg-[#2f77c9]"
+                                >
+                                    <MessageSquareText className="h-5 w-5" />
+                                    Reseñar en Social
+                                </button>
                             </div>
                         </div>
 
@@ -1382,7 +1424,7 @@ export const DetallePelicula = () => {
                         <div className="order-1 space-y-4 lg:order-2">
                             {showtimesLoading ? (
                                 <div className="rounded-3xl border border-slate-700/50 bg-slate-800/30 p-6 text-slate-300">
-                                    Cargando horarios reales...
+                                    Cargando horarios...
                                 </div>
                             ) : showtimesError && showtimeCatalog.length === 0 ? (
                                 <div className="rounded-3xl border border-amber-500/40 bg-amber-500/10 p-6 text-amber-100">
@@ -1632,4 +1674,3 @@ export const DetallePelicula = () => {
 };
 
 export default DetallePelicula;
-

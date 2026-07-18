@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import Registro from './Registro';
@@ -14,19 +14,23 @@ const renderRegistration = () =>
   render(
     <MemoryRouter initialEntries={['/registro']}>
       <Routes>
-        <Route path="/" element={<div>Inicio de sesión destino</div>} />
+        <Route path="/" element={<div>Inicio de sesion destino</div>} />
         <Route path="/registro" element={<Registro />} />
         <Route path="/menuPrincipal" element={<div>Cartelera destino</div>} />
       </Routes>
     </MemoryRouter>
   );
 
-const completeForm = async (user) => {
-  await user.type(screen.getByLabelText('Nombre Completo'), 'Ana Torres');
-  await user.type(screen.getByLabelText('Email'), 'ana@example.com');
-  await user.type(screen.getByLabelText('Contraseña'), 'secret123');
-  await user.type(screen.getByLabelText('Nombre de Usuario'), 'ana_torres');
-  await user.type(screen.getByLabelText('Documento'), '12345678');
+const fillInput = (label, value) => {
+  fireEvent.change(screen.getByLabelText(label), { target: { value } });
+};
+
+const completeForm = () => {
+  fillInput(/Nombre Completo/i, 'Ana Torres');
+  fillInput(/Email/i, 'ana@example.com');
+  fillInput(/Contrase/i, 'secret123');
+  fillInput(/Nombre de Usuario/i, 'ana_torres');
+  fillInput(/Documento/i, '12345678');
 };
 
 describe('Registro', () => {
@@ -39,7 +43,7 @@ describe('Registro', () => {
     });
     renderRegistration();
 
-    await completeForm(user);
+    completeForm();
     await user.click(screen.getByRole('button', { name: 'Registrarse' }));
 
     expect(await screen.findByText('Registro exitoso')).toBeInTheDocument();
@@ -57,11 +61,11 @@ describe('Registro', () => {
     loginUser.mockRejectedValueOnce(new Error('Login temporalmente no disponible'));
     renderRegistration();
 
-    await completeForm(user);
+    completeForm();
     await user.click(screen.getByRole('button', { name: 'Registrarse' }));
 
     expect(await screen.findByText(/Tu cuenta fue creada/)).toBeInTheDocument();
     expect(sessionStorage.getItem('filmate_auth_session')).toBeNull();
-    await waitFor(() => expect(screen.getByText('Inicio de sesión destino')).toBeInTheDocument(), { timeout: 3_500 });
+    await waitFor(() => expect(screen.getByText('Inicio de sesion destino')).toBeInTheDocument(), { timeout: 3_500 });
   });
 });

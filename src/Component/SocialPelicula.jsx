@@ -21,8 +21,37 @@ const FALLBACK_POSTER = 'https://placehold.co/400x600/0f172a/f8fafc?text=Filmate
 const FALLBACK_BANNER = 'https://placehold.co/1200x420/020b16/f8fafc?text=Filmate';
 const MOVIE_CACHE_PREFIX = 'filmate.social.movie.';
 const reviewSkeletonIds = ['review-a', 'review-b', 'review-c'];
+const reviewRelativeTimeFormatter = new Intl.RelativeTimeFormat('es', {
+  numeric: 'always',
+});
 
 const getUserId = (user) => user?.id_usuario || user?.id || user?.user_id || null;
+const hasReviewText = (review) => Boolean(String(review?.texto || review?.comentario || '').trim());
+
+const formatReviewAge = (dateValue) => {
+  if (!dateValue) return 'Fecha no disponible';
+
+  const reviewDate = new Date(dateValue);
+  if (Number.isNaN(reviewDate.getTime())) return 'Fecha no disponible';
+
+  const differenceMs = reviewDate.getTime() - Date.now();
+  const absoluteDifference = Math.abs(differenceMs);
+
+  if (absoluteDifference < 10 * 1000) return 'hace unos segundos';
+
+  const units = [
+    ['year', 365 * 24 * 60 * 60 * 1000],
+    ['month', 30 * 24 * 60 * 60 * 1000],
+    ['week', 7 * 24 * 60 * 60 * 1000],
+    ['day', 24 * 60 * 60 * 1000],
+    ['hour', 60 * 60 * 1000],
+    ['minute', 60 * 1000],
+    ['second', 1000],
+  ];
+  const [unit, unitMs] = units.find(([, milliseconds]) => absoluteDifference >= milliseconds) || units.at(-1);
+
+  return reviewRelativeTimeFormatter.format(Math.round(differenceMs / unitMs), unit);
+};
 
 const getMovieCacheKey = (movieId) => `${MOVIE_CACHE_PREFIX}${movieId}`;
 const isPlaceholderText = (value) => {
@@ -84,7 +113,7 @@ export const SocialPelicula = () => {
   const [movie, setMovie] = useState(() => location.state?.movie || readCachedMovie(movieId));
   const [loading, setLoading] = useState(() => !(location.state?.movie || readCachedMovie(movieId)));
   const [loadError, setLoadError] = useState('');
-  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(Boolean(location.state?.openReview));
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [reviewsError, setReviewsError] = useState('');
@@ -104,6 +133,18 @@ export const SocialPelicula = () => {
   const [expandedReviewId, setExpandedReviewId] = useState(null);
   const [commentSavingId, setCommentSavingId] = useState(null);
   const [commentError, setCommentError] = useState('');
+  const backTo = location.state?.returnTo || '/social';
+  const backLabel = location.state?.returnLabel || 'Volver a Social';
+
+  useEffect(() => {
+    if (!location.state?.openReview) return undefined;
+
+    const timer = globalThis.window.setTimeout(() => {
+      setReviewOpen(true);
+    }, 0);
+
+    return () => globalThis.window.clearTimeout(timer);
+  }, [location.state?.openReview]);
 
   useEffect(() => {
     let active = true;
@@ -226,6 +267,7 @@ export const SocialPelicula = () => {
 
   const currentUserReview = reviews.find((review) => String(review.userId) === String(userId));
   const hasWrittenReview = Boolean(currentUserReview?.texto?.trim());
+  const visibleReviews = reviews.filter(hasReviewText);
 
   const handleRatingChange = async (value) => {
     setReviewError('');
@@ -502,11 +544,12 @@ export const SocialPelicula = () => {
 
       <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Link
-          to="/social"
+          to={backTo}
+          state={location.state?.fromMovieDetails ? { movieState: location.state?.movie } : undefined}
           className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-700 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-slate-800"
         >
           <ArrowLeft className="h-4 w-4" />
-          Volver a Social
+          {backLabel}
         </Link>
 
         {loadError && (
@@ -547,7 +590,7 @@ export const SocialPelicula = () => {
                   <div className="px-2">
                     <StarRatingDisplay rating={movie.rating} sizeClass="h-3.5 w-3.5" justifyClass="justify-center" />
                     <p className="mt-1 text-sm font-black text-white">{movie.rating || 0}/5</p>
-                    <p className="text-[0.65rem] font-bold uppercase text-white/40">{movie.totalResenas || reviews.length || 0} reseñas</p>
+                    <p className="text-[0.65rem] font-bold uppercase text-white/40">{visibleReviews.length} reseñas</p>
                   </div>
                   <div className="px-2">
                     <Eye className="mx-auto h-3.5 w-3.5 text-sky-300" />
@@ -734,10 +777,10 @@ export const SocialPelicula = () => {
               </div>
 
               <section className="mt-8">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                   <h2 className="text-2xl font-black text-white">Reseñas de la comunidad</h2>
-                  <span className="rounded-full border border-slate-700 px-3 py-1 text-sm font-bold text-white/60">
-                    {reviews.length} publicaciones
+                  <span className="rounded-full border border-slate-700 px-3 py-1 text-xs font-bold text-white/60 sm:text-sm">
+                    {visibleReviews.length} {visibleReviews.length === 1 ? 'publicación' : 'publicaciones'}
                   </span>
                 </div>
 
@@ -750,8 +793,8 @@ export const SocialPelicula = () => {
                     <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-100">
                       {reviewsError}
                     </div>
-                  ) : reviews.length > 0 ? (
-                    reviews.map((review) => {
+                  ) : visibleReviews.length > 0 ? (
+                    visibleReviews.map((review) => {
                       const comments = reviewComments[review.id] || [];
                       const profilePath = review.userId ? `/social/${review.userId}` : '/social';
                       const isExpanded = expandedReviewId === review.id;
@@ -771,10 +814,18 @@ export const SocialPelicula = () => {
                               <Link to={profilePath} className="inline-flex min-h-11 max-w-full items-center truncate font-black text-white hover:text-sky-300">
                                 {review.usuario}
                               </Link>
-                              <StarRatingDisplay rating={review.rating} sizeClass="h-4 w-4" />
+                              <div className="flex flex-col items-end gap-1">
+                                <StarRatingDisplay rating={review.rating} sizeClass="h-4 w-4" />
+                                <time
+                                  dateTime={review.fechaPublicacion || undefined}
+                                  className="text-xs font-semibold text-white/40"
+                                >
+                                  {formatReviewAge(review.fechaPublicacion)}
+                                </time>
+                              </div>
                             </div>
                             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-white/70">
-                              {review.texto || 'Sin comentario.'}
+                              {review.texto}
                             </p>
                             <div className="mt-4 flex flex-wrap items-center gap-2">
                               <button
@@ -808,7 +859,15 @@ export const SocialPelicula = () => {
                                   {comments.length > 0 ? (
                                     comments.map((reviewComment) => (
                                       <div key={reviewComment.id} className="rounded-lg bg-slate-900 px-3 py-2">
-                                        <p className="text-xs font-black text-white/75">{reviewComment.username}</p>
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                          <p className="text-xs font-black text-white/75">{reviewComment.username}</p>
+                                          <time
+                                            dateTime={reviewComment.createdAt || undefined}
+                                            className="text-[0.7rem] font-semibold text-white/35"
+                                          >
+                                            {formatReviewAge(reviewComment.createdAt)}
+                                          </time>
+                                        </div>
                                         <p className="mt-1 text-sm text-white/70">{reviewComment.text}</p>
                                       </div>
                                     ))
