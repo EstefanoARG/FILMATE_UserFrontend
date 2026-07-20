@@ -13,7 +13,14 @@ describe('authSession', () => {
   it('stores and reads a guest session', () => {
     saveGuestSession();
 
-    expect(getAuthSession()).toEqual({ mode: 'guest', user: null });
+    expect(getAuthSession()).toMatchObject({ mode: 'guest' });
+    expect(getAuthSession().user).toMatchObject({
+      id_usuario: expect.any(String),
+      id: expect.any(String),
+      nombre: 'Invitado',
+      username: 'invitado',
+      correo: '',
+    });
     expect(isGuestSession()).toBe(true);
     expect(isRegisteredSession()).toBe(false);
   });

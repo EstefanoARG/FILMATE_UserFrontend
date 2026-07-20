@@ -16,10 +16,18 @@ Filmate es una interfaz web pensada para una experiencia visual moderna y rapida
 
 - Pantalla de inicio de sesion con logo principal y modal de exito.
 - Pantalla de registro de usuario.
-- Menu principal con recomendaciones y cartelera.
+- Menu principal con recomendaciones, cartelera y peliculas trending.
 - Detalle de pelicula con informacion, horarios, trailer y reseñas.
+- Seccion de cines con busqueda de funciones.
+- Seccion de dulceria con carrito de compras.
+- Seccion social completa: feed de actividad, perfiles, reseñas, peliculas seguidas.
+- Notificaciones en tiempo real (campana).
+- Instalacion como PWA (Progressive Web App).
+- Proteccion de rutas para usuarios registrados.
+- Lazy loading de componentes con React.lazy y Suspense.
+- Manejo de errores global con AppErrorBoundary.
 - Navegacion entre vistas con React Router.
-- Header reutilizable para las secciones internas.
+- Header y Footer reutilizables.
 - Diseno responsivo para escritorio y movil.
 
 ## Requisitos
@@ -148,43 +156,84 @@ El analisis requiere un servidor SonarQube accesible y un token valido.
 ## Estructura del proyecto
 
 ```text
-FILMATE_UserFrontend/
+frontend-user/
+├── docs/
+│   ├── manual-usuario/
+│   └── testing/
 ├── public/
 │   ├── favicon.png
-│   ├── LogoTrans (2).png
 │   ├── logo.png
 │   └── otros assets estaticos
 ├── src/
-│   ├── App.jsx
-│   ├── main.jsx
-│   ├── index.css
-│   ├── App.css
 │   ├── assets/
-│   └── Component/
-│       ├── Header.jsx
-│       ├── IniciarSesion.jsx
-│       ├── Registro.jsx
-│       ├── MenuPrincipal.jsx
-│       ├── DetallePelicula.jsx
-│       ├── Cines.jsx
-│       ├── Dulceria.jsx
-│       ├── Social.jsx
-│       └── peliculas.js
+│   ├── Component/
+│   │   ├── AppErrorBoundary.jsx
+│   │   ├── authSession.js
+│   │   ├── Cines.jsx
+│   │   ├── DetallePelicula.jsx
+│   │   ├── Dulceria.jsx
+│   │   ├── dulceriaFlowUtils.js
+│   │   ├── filmateApi.js
+│   │   ├── Footer.jsx
+│   │   ├── Header.jsx
+│   │   ├── IniciarSesion.jsx
+│   │   ├── MenuPrincipal.jsx
+│   │   ├── NotificationBell.jsx
+│   │   ├── peliculas.js
+│   │   ├── ProtectedRoute.jsx
+│   │   ├── purchaseHistory.js
+│   │   ├── PwaInstallButton.jsx
+│   │   ├── recommendationUtils.js
+│   │   ├── Registro.jsx
+│   │   ├── Social.jsx
+│   │   ├── SocialEditarPerfil.jsx
+│   │   ├── SocialFeed.jsx
+│   │   ├── SocialPelicula.jsx
+│   │   ├── SocialResena.jsx
+│   │   ├── StarRatingDisplay.jsx
+│   │   ├── SuggestedUsers.jsx
+│   │   ├── Toast.jsx
+│   │   └── TrendingMovies.jsx
+│   ├── test/
+│   ├── App.css
+│   ├── App.jsx
+│   ├── index.css
+│   ├── main.jsx
+│   ├── pwa.js
+│   └── logo.svg
+├── .env.example
+├── .gitattributes
+├── .gitignore
+├── eslint.config.js
 ├── index.html
-├── vite.config.js
+├── package-lock.json
 ├── package.json
-└── README.md
+├── playwright.config.js
+├── README.md
+├── scripts/
+├── sonar-project.properties
+├── vite.config.js
+└── dist/
 ```
 
 ## Rutas principales
 
-- `/` -> Inicio de sesion
-- `/registro` -> Registro de usuario
-- `/menuPrincipal` -> Cartelera principal
-- `/menuPrincipal/detallePelicula` -> Detalle de pelicula
-- `/cines` -> Seccion de cines
-- `/dulceria` -> Seccion de dulceria
-- `/social` -> Seccion social
+| Ruta | Descripcion | Requiere autenticacion |
+|---|---|---|
+| `/` | Cartelera principal (Landing) | No |
+| `/iniciar-sesion` | Inicio de sesion | No |
+| `/registro` | Registro de usuario | No |
+| `/menuPrincipal` | Cartelera principal | No |
+| `/menuPrincipal/detallePelicula/:movieId?` | Detalle de pelicula | No |
+| `/cines` | Seccion de cines | No |
+| `/dulceria` | Seccion de dulceria | No |
+| `/social` | Feed de actividad social | Si (usuario registrado) |
+| `/social/perfil` | Perfil del usuario | Si (usuario registrado) |
+| `/social/perfil/:profileUserId` | Perfil de otro usuario | Si (usuario registrado) |
+| `/social/editarPerfil` | Editar perfil y biografia | Si (usuario registrado) |
+| `/social/pelicula/:movieId` | Detalle de pelicula en contexto social | Si (usuario registrado) |
+| `/social/resena/:reviewId` | Resena individual | Si (usuario registrado) |
+| `*` | Pagina 404 (Error personalizado) | No |
 
 ## Estrategia de ramas
 
@@ -206,8 +255,13 @@ Se usa una estrategia basada en ramas de trabajo y consolidacion:
 
 - Componentes de React organizados en `src/Component/`.
 - Navegacion centralizada con `react-router-dom`.
-- Estilos base con Tailwind CSS.
-- Imagenes y assets publicos dentro de `public/`.
+- Estilos base con Tailwind CSS complementados con `App.css`.
+- Utilidades modulares en archivos separados (`authSession.js`, `filmateApi.js`, `dulceriaFlowUtils.js`, `purchaseHistory.js`, `recommendationUtils.js`).
+- Pruebas unitarias e integracion con Vitest + Testing Library; E2E con Playwright.
+- Lazy loading con `React.lazy` + `Suspense` para mejorar rendimiento.
+- Manejo de errores global con `AppErrorBoundary`.
+- Proteccion de rutas con `ProtectedRoute` para secciones que requieren autenticacion.
+- Imagenes y assets publicos dentro de `public/`. 
 
 ## Notas
 

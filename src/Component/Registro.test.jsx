@@ -14,7 +14,7 @@ const renderRegistration = () =>
   render(
     <MemoryRouter initialEntries={['/registro']}>
       <Routes>
-        <Route path="/" element={<div>Inicio de sesion destino</div>} />
+        <Route path="/iniciar-sesion" element={<div>Inicio de sesión destino</div>} />
         <Route path="/registro" element={<Registro />} />
         <Route path="/menuPrincipal" element={<div>Cartelera destino</div>} />
       </Routes>

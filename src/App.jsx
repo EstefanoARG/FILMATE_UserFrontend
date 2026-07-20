@@ -9,9 +9,11 @@ const MenuPrincipal = lazy(() => import('./Component/MenuPrincipal.jsx'));
 const Registro = lazy(() => import('./Component/Registro.jsx'));
 const Cines = lazy(() => import('./Component/Cines.jsx'));
 const Dulceria = lazy(() => import('./Component/Dulceria.jsx'));
+const SocialFeed = lazy(() => import('./Component/SocialFeed.jsx'));
 const Social = lazy(() => import('./Component/Social.jsx'));
 const SocialEditarPerfil = lazy(() => import('./Component/SocialEditarPerfil.jsx'));
 const SocialPelicula = lazy(() => import('./Component/SocialPelicula.jsx'));
+const SocialResena = lazy(() => import('./Component/SocialResena.jsx'));
 const DetallePelicula = lazy(() => import('./Component/DetallePelicula.jsx'));
 
 const PageLoader = () => (
@@ -39,7 +41,8 @@ function App() {
       <AppErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-        <Route path="/" element={<IniciarSesion />} />
+        <Route path="/" element={<MenuPrincipal />} />
+        <Route path="/iniciar-sesion" element={<IniciarSesion />} />
         <Route path="/menuPrincipal" element={<MenuPrincipal />} />
         <Route path="/registro" element={<Registro />} />
         <Route path="/cines" element={<Cines />} />
@@ -48,12 +51,20 @@ function App() {
           path="/social"
           element={
             <ProtectedRoute requireRegistered>
+              <SocialFeed />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/social/perfil"
+          element={
+            <ProtectedRoute requireRegistered>
               <Social />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/social/:profileUserId"
+          path="/social/perfil/:profileUserId"
           element={
             <ProtectedRoute requireRegistered>
               <Social />
@@ -73,6 +84,14 @@ function App() {
           element={
             <ProtectedRoute requireRegistered>
               <SocialPelicula />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/social/resena/:reviewId"
+          element={
+            <ProtectedRoute requireRegistered>
+              <SocialResena />
             </ProtectedRoute>
           }
         />

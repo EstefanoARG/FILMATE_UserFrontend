@@ -752,6 +752,16 @@ export async function getMovieById(movieId) {
   return normalizeMovie(data);
 }
 
+export async function getPersonalizedRecommendations(userId, limit = 3) {
+  try {
+    const params = `limit=${limit}${userId ? `&user_id=${userId}` : ''}`;
+    const data = await request(`/client/movies/recommendations?${params}`);
+    return data || { movies: [], preferred_genres: [] };
+  } catch {
+    return { movies: [], preferred_genres: [] };
+  }
+}
+
 export async function createMovieReview(payload) {
   return request('/client/reviews/', {
     method: 'POST',
@@ -772,6 +782,12 @@ export async function updateMovieReview(reviewId, payload) {
       comentario: payload.comentario,
     }),
   });
+}
+
+export async function getReviewDetail(reviewId, viewerId = null) {
+  if (!reviewId) return null;
+  const params = viewerId ? `?viewer_id=${viewerId}` : '';
+  return request(`/client/reviews/${reviewId}${params}`);
 }
 
 export async function getReviewComments(reviewId) {
@@ -1114,6 +1130,54 @@ export async function getUserProfile(userId) {
   if (!userId) return null;
   const data = await request(`/users/${userId}`);
   return normalizeUser(data);
+}
+
+export async function getSocialFeed(userId, limit = 20, offset = 0) {
+  if (!userId) return [];
+
+  const data = await request(`/client/social/feed?user_id=${userId}&limit=${limit}&offset=${offset}`);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getTrendingMovies(limit = 5, userId = null) {
+  const params = `limit=${limit}${userId ? `&user_id=${userId}` : ''}`;
+  const data = await request(`/client/social/trending-movies?${params}`);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getSuggestedUsers(userId, limit = 5) {
+  if (!userId) return [];
+  const data = await request(`/client/social/suggested-users?user_id=${userId}&limit=${limit}`);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function visitProfile(visitorId, visitedUserId) {
+  if (!visitorId || !visitedUserId) return;
+  await request(`/client/social/visit-profile?user_id=${visitorId}`, {
+    method: 'POST',
+    body: JSON.stringify({ visited_user_id: visitedUserId }),
+  });
+}
+
+export async function getNotifications(userId, limit = 20) {
+  if (!userId) return { notifications: [], unread_count: 0 };
+  const data = await request(`/client/social/notifications?user_id=${userId}&limit=${limit}`);
+  return data || { notifications: [], unread_count: 0 };
+}
+
+export async function markNotificationsRead(userId, actividadIds) {
+  if (!userId || !actividadIds?.length) return;
+  await request(`/client/social/notifications/read?user_id=${userId}`, {
+    method: 'POST',
+    body: JSON.stringify({ actividad_ids: actividadIds }),
+  });
+}
+
+export async function markAllNotificationsRead(userId) {
+  if (!userId) return;
+  await request(`/client/social/notifications/read-all?user_id=${userId}`, {
+    method: 'POST',
+  });
 }
 
 export async function getSocialSummary(userId) {

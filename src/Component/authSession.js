@@ -54,12 +54,27 @@ export function getAccessToken() {
   return getAuthSession()?.accessToken || null;
 }
 
+const generateGuestId = () => {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `guest-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+};
+
 export function saveGuestSession() {
+  const guestId = generateGuestId();
   sessionStorage.setItem(
     AUTH_KEY,
     JSON.stringify({
       mode: 'guest',
-      user: null,
+      user: {
+        id_usuario: guestId,
+        id: guestId,
+        nombre: 'Invitado',
+        username: 'invitado',
+        correo: '',
+      },
     })
   );
   removeLegacyAuthSession();

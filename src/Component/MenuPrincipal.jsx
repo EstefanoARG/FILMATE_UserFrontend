@@ -5,9 +5,8 @@ import Header from './Header.jsx';
 import Footer from './Footer.jsx';
 import StarRatingDisplay from './StarRatingDisplay.jsx';
 import { useNavigate } from 'react-router-dom';
-import { getCinemas, getMovies, getRooms, getShowtimesByRange, getFavoriteMovies } from './filmateApi';
+import { getCinemas, getMovies, getRooms, getShowtimesByRange, getPersonalizedRecommendations } from './filmateApi';
 import { getAuthSession } from './authSession';
-import { rankMoviesByFavoriteGenres } from './recommendationUtils.js';
 
 const FALLBACK_MEDIA_IMAGE =
     "data:image/svg+xml;charset=UTF-8," +
@@ -37,7 +36,7 @@ const estrenoScore = (pelicula) => (pelicula.estreno ? 1 : 0);
 
 const MovieCardSkeleton = ({ large = false, className = '' }) => (
     <div className={`overflow-hidden rounded-3xl border border-slate-700/50 bg-slate-800/30 ${className}`}>
-        <div className={`${large ? 'aspect-[2/3] md:h-[550px] md:aspect-auto' : 'aspect-[2/3] md:h-[420px] md:aspect-auto'} animate-pulse bg-slate-700/50`} />
+        <div className={`${large ? 'aspect-[2/3] md:h-[550px] md:aspect-auto' : 'aspect-[2/3] md:h-[550px] md:aspect-auto'} animate-pulse bg-slate-700/50`} />
         <div className="space-y-3 p-5">
             <div className="mx-auto h-5 w-2/3 animate-pulse rounded-full bg-slate-700/60" />
             <div className="mx-auto h-4 w-1/2 animate-pulse rounded-full bg-slate-700/40" />
@@ -59,16 +58,17 @@ export const MenuPrincipal = () => {
     const [filteredShowtimes, setFilteredShowtimes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filtersLoading, setFiltersLoading] = useState(true);
-    const [showtimesFilterLoading, setShowtimesFilterLoading] = useState(false);
-    const [loadedShowtimeFilterKey, setLoadedShowtimeFilterKey] = useState('');
+
+
     const [error, setError] = useState('');
     const [selectedDay, setSelectedDay] = useState('');
     const [selectedCinema, setSelectedCinema] = useState('all');
     const [selectedGenre, setSelectedGenre] = useState('all');
     const session = getAuthSession();
     const sessionUserId = session?.user?.id || session?.user?.id_usuario || null;
-    const [favoriteMovies, setFavoriteMovies] = useState([]);
-    const [favoritesLoading, setFavoritesLoading] = useState(Boolean(sessionUserId));
+    const [recommendedMovies, setRecommendedMovies] = useState([]);
+    const [recommendedGenres, setRecommendedGenres] = useState([]);
+    const [recommendationsLoading, setRecommendationsLoading] = useState(Boolean(sessionUserId));
     const LIMA_TIME_ZONE = 'America/Lima';
     const dateKeyFormatter = useMemo(
         () =>
@@ -192,26 +192,25 @@ export const MenuPrincipal = () => {
     useEffect(() => {
         let isMounted = true;
 
-        const loadFavorites = async () => {
-            if (!sessionUserId) {
-                setFavoriteMovies([]);
-                setFavoritesLoading(false);
-                return;
-            }
-
+        const loadRecommendations = async () => {
             try {
-                setFavoritesLoading(true);
-                const favorites = await getFavoriteMovies(sessionUserId);
-                if (isMounted) setFavoriteMovies(favorites);
-            } catch (err) {
-                if (import.meta.env.DEV) console.warn('[MenuPrincipal] No se pudieron cargar favoritos', err);
-                if (isMounted) setFavoriteMovies([]);
+                setRecommendationsLoading(true);
+                const data = await getPersonalizedRecommendations(sessionUserId, 3);
+                if (isMounted) {
+                    setRecommendedMovies(data.movies || []);
+                    setRecommendedGenres(data.preferred_genres || []);
+                }
+            } catch {
+                if (isMounted) {
+                    setRecommendedMovies([]);
+                    setRecommendedGenres([]);
+                }
             } finally {
-                if (isMounted) setFavoritesLoading(false);
+                if (isMounted) setRecommendationsLoading(false);
             }
         };
 
-        loadFavorites();
+        loadRecommendations();
         return () => {
             isMounted = false;
         };
@@ -294,21 +293,13 @@ export const MenuPrincipal = () => {
     }, [getOffsetDateKey, getShowtimeDateKey]);
 
     useEffect(() => {
-        let isMounted = true;
-
         const loadSelectedDayShowtimes = async () => {
             if (!selectedDay) {
                 setFilteredShowtimes([]);
-                setShowtimesFilterLoading(false);
-                setLoadedShowtimeFilterKey('');
                 return;
             }
 
-            const showtimeFilterKey = `${selectedDay}|${selectedCinema}`;
-
             try {
-                setShowtimesFilterLoading(true);
-                if (!isMounted) return;
                 const activeCinemaIds = new Set(cinemasData.map((cinema) => String(cinema.id)));
                 const activeRoomIdSet = new Set(activeRoomIds);
                 const activeShowtimes = rangeShowtimes
@@ -321,24 +312,13 @@ export const MenuPrincipal = () => {
                         selectedCinema === 'all' || String(showtime.id_cine) === String(selectedCinema)
                     ));
                 setFilteredShowtimes(activeShowtimes);
-                setLoadedShowtimeFilterKey(showtimeFilterKey);
             } catch (err) {
-                if (!isMounted) return;
                 console.error('Error cargando funciones del filtro:', err);
                 setFilteredShowtimes([]);
-                setLoadedShowtimeFilterKey(showtimeFilterKey);
-            } finally {
-                if (isMounted) {
-                    setShowtimesFilterLoading(false);
-                }
             }
         };
 
         loadSelectedDayShowtimes();
-
-        return () => {
-            isMounted = false;
-        };
     }, [activeRoomIds, cinemasData, getShowtimeDateKey, rangeShowtimes, selectedCinema, selectedDay]);
 
     const days = useMemo(() => {
@@ -414,8 +394,6 @@ export const MenuPrincipal = () => {
         [filteredPeliculas]
     );
 
-    const currentShowtimeFilterKey = selectedDay ? `${selectedDay}|${selectedCinema}` : '';
-    const showtimesReadyForCurrentFilter = !selectedDay || loadedShowtimeFilterKey === currentShowtimeFilterKey;
     const recommendedCandidateMovies = useMemo(() => {
         if (!selectedDay) return peliculasData;
 
@@ -426,24 +404,8 @@ export const MenuPrincipal = () => {
         return peliculasData.filter((pelicula) => matchingMovieIds.has(String(pelicula.id)));
     }, [filteredShowtimes, peliculasData, selectedDay]);
 
-    const recommendationResult = useMemo(
-        () => rankMoviesByFavoriteGenres(recommendedCandidateMovies, favoriteMovies, 3),
-        [favoriteMovies, recommendedCandidateMovies]
-    );
-    const recommendedMovies = recommendationResult.movies;
-    const preferredRecommendationGenres = recommendationResult.preferredGenres.slice(0, 3);
-    const recommendationsLoading =
-        loading ||
-        favoritesLoading ||
-        filtersLoading ||
-        showtimesFilterLoading ||
-        !showtimesReadyForCurrentFilter;
-    const isCatalogLoading =
-        loading ||
-        filtersLoading ||
-        (days.length > 0 && !selectedDay) ||
-        showtimesFilterLoading ||
-        !showtimesReadyForCurrentFilter;
+    const recommendationsLoadingState =
+        loading || recommendationsLoading || filtersLoading;
     const defaultDay = days.find((day) => day.value === getOffsetDateKey(0))?.value || days[0]?.value || '';
     const hasActiveFilters = selectedCinema !== 'all' || selectedDay !== defaultDay || selectedGenre !== 'all';
     const clearFilters = () => {
@@ -467,9 +429,9 @@ export const MenuPrincipal = () => {
                     <div className="mb-5 flex items-end justify-between gap-4 sm:mb-8">
                         <div>
                             <h2 className="text-3xl font-bold text-white sm:text-4xl">Recomendaciones</h2>
-                            {!recommendationsLoading && preferredRecommendationGenres.length > 0 && (
+                            {!recommendationsLoadingState && recommendedGenres.length > 0 && (
                                 <p className="mt-2 text-sm font-semibold text-sky-300">
-                                    Según tus favoritos: {preferredRecommendationGenres
+                                    {recommendedGenres
                                         .map((genre) => genre.charAt(0).toUpperCase() + genre.slice(1))
                                         .join(' · ')}
                                 </p>
@@ -478,7 +440,7 @@ export const MenuPrincipal = () => {
                         <span className="text-sm text-slate-400 md:hidden">Desliza para ver más</span>
                     </div>
                     <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 md:mx-0 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible md:px-0 md:pb-0">
-                        {recommendationsLoading ? (
+                        {recommendationsLoadingState ? (
                             movieSkeletons.slice(0, 3).map((item) => (
                                 <MovieCardSkeleton key={item} large className="w-[82vw] shrink-0 snap-center md:w-auto md:min-w-0" />
                             ))
@@ -615,7 +577,7 @@ export const MenuPrincipal = () => {
                 {/* Cartelera */}
                 <section>
                     <h2 className="mb-6 text-3xl font-bold text-white sm:mb-8 sm:text-4xl">Cartelera</h2>
-                    {isCatalogLoading ? (
+                    {loading ? (
                         <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3">
                             {movieSkeletons.map((item) => (
                                 <MovieCardSkeleton key={item} />
@@ -626,7 +588,7 @@ export const MenuPrincipal = () => {
                             No hay peliculas con funciones para la fecha seleccionada.
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3">
+                        <div key={`grid-${selectedDay}-${selectedCinema}-${selectedGenre}`} className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3 [animation:fade-in_0.2s_ease-in]">
                             {displayPeliculas.map((pelicula) => (
                                 <button
                                     type="button"

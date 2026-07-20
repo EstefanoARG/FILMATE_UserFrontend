@@ -134,7 +134,7 @@ export const Registro = () => {
       setShowSuccess(true);
 
       setTimeout(() => {
-        navigate(didAutoLogin ? '/menuPrincipal' : '/');
+        navigate(didAutoLogin ? '/menuPrincipal' : '/iniciar-sesion');
       }, 2000);
     } catch (err) {
       setError(err?.message || 'No se pudo completar el registro.');
@@ -318,7 +318,7 @@ export const Registro = () => {
 
           <p className="text-center mt-6 text-gray-400">
             Ya tienes cuenta?{' '}
-            <Link to="/" className="inline-flex min-h-11 items-center px-2 font-semibold text-red-500 transition-colors hover:text-red-400">
+            <Link to="/iniciar-sesion" className="inline-flex min-h-11 items-center px-2 font-semibold text-red-500 transition-colors hover:text-red-400">
               Inicia sesión
             </Link>
           </p>
