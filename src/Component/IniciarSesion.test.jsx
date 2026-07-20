@@ -60,6 +60,14 @@ describe('IniciarSesion', () => {
     await user.click(screen.getByRole('button', { name: /entrar como invitado/i }));
 
     await waitFor(() => expect(screen.getByText('Cartelera destino')).toBeInTheDocument(), { timeout: 3_500 });
-    expect(JSON.parse(sessionStorage.getItem('filmate_auth_session'))).toEqual({ mode: 'guest', user: null });
+    const stored = JSON.parse(sessionStorage.getItem('filmate_auth_session'));
+    expect(stored.mode).toBe('guest');
+    expect(stored.user).toMatchObject({
+      id_usuario: expect.any(String),
+      id: expect.any(String),
+      nombre: 'Invitado',
+      username: 'invitado',
+      correo: '',
+    });
   });
 });

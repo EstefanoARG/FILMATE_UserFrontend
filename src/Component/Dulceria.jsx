@@ -18,7 +18,7 @@ import {
   tokenizeCardPayment,
   tokenizeYapePayment,
 } from './filmateApi';
-import { getAuthSession } from './authSession';
+import { getAuthSession, saveGuestSession } from './authSession';
 import { addPurchaseToHistory, getSessionUserId } from './purchaseHistory';
 
 const productosData = {
@@ -1475,6 +1475,10 @@ export const Dulceria = () => {
   const iniciarPago = async ({ omitSnacks = false } = {}) => {
     if (isProcessingPayment) return;
 
+    if (!authSession) {
+      saveGuestSession();
+    }
+
     if (!isSeatFlow) {
       try {
         setCheckoutError('');
@@ -1486,12 +1490,6 @@ export const Dulceria = () => {
       } finally {
         setIsProcessingPayment(false);
       }
-      return;
-    }
-
-    const userId = authSession?.user?.id_usuario || authSession?.user?.id || authSession?.user?.user_id;
-    if (!userId) {
-      openNotice('Inicia sesión', 'Debes iniciar sesión para completar una reserva.');
       return;
     }
 
@@ -1524,15 +1522,15 @@ export const Dulceria = () => {
   const confirmarPago = async (paymentData = {}) => {
     if (isProcessingPayment) return;
 
-    const userId = authSession?.user?.id_usuario || authSession?.user?.id || authSession?.user?.user_id;
+    if (!authSession) {
+      saveGuestSession();
+    }
+
+    const localAuth = authSession || getAuthSession();
+    const userId = localAuth?.user?.id_usuario || localAuth?.user?.id;
 
     if (isSeatFlow) {
       const seatIds = bookingContext?.seatIds || [];
-
-      if (!userId) {
-        setCheckoutError('Debes iniciar sesión para completar una reserva.');
-        return;
-      }
 
       if (!bookingContext?.id_funcion || seatIds.length === 0) {
         setCheckoutError('No se encontraron asientos o función válidos para reservar.');
@@ -1553,10 +1551,7 @@ export const Dulceria = () => {
           return;
         }
 
-        const email = authSession?.user?.correo || authSession?.user?.correo_electronico;
-        if (!email) {
-          throw new Error('Tu cuenta no tiene un correo válido para procesar el pago.');
-        }
+        const email = localAuth?.user?.correo || localAuth?.user?.correo_electronico || `guest-${userId}@filmate.pe`;
 
         const tokenizedPayment = paymentData.paymentKind === 'tarjeta'
           ? await tokenizeCardPayment(paymentData.tokenizationPayload || {})
@@ -1605,15 +1600,7 @@ export const Dulceria = () => {
       setCheckoutError('');
       setIsProcessingPayment(true);
 
-      if (!userId) {
-        setCheckoutError('Debes iniciar sesión para completar la compra.');
-        return;
-      }
-
-      const email = authSession?.user?.correo || authSession?.user?.correo_electronico;
-      if (!email) {
-        throw new Error('Tu cuenta no tiene un correo válido para procesar el pago.');
-      }
+      const email = localAuth?.user?.correo || localAuth?.user?.correo_electronico || `guest-${userId}@filmate.pe`;
 
       const validationResult = await refreshCommercialData({ includeSnacks: true });
       if (validationResult.pricesChanged || validationResult.stockAdjusted) {

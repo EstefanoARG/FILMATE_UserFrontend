@@ -15,7 +15,7 @@ const renderRoute = () =>
             </ProtectedRoute>
           }
         />
-        <Route path="/menuPrincipal" element={<div>Cartelera publica</div>} />
+        <Route path="/iniciar-sesion" element={<div>Cartelera publica</div>} />
       </Routes>
     </MemoryRouter>
   );

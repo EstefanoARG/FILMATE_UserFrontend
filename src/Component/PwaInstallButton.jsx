@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Download, Share, SquarePlus, X } from 'lucide-react';
+import { Download, Share, SquarePlus, X, Play } from 'lucide-react';
 import PropTypes from 'prop-types';
 import {
   clearPwaInstallPrompt,
@@ -69,10 +69,12 @@ function PwaInstallButton({ variant = 'default', onBeforeInstall }) {
   };
 
   const triggerClassName = variant === 'header'
-    ? 'inline-flex items-center gap-2 rounded-full border border-sky-400/45 bg-sky-500/10 px-3 py-2 text-sm font-bold text-sky-200 transition-colors hover:bg-sky-500/20'
+    ? 'inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-3 py-2 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all duration-300 hover:from-sky-400 hover:to-blue-500 hover:shadow-xl hover:shadow-sky-600/30 hover:scale-105'
     : variant === 'menu'
-      ? 'flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-sky-200 transition-colors hover:bg-sky-500/10'
-      : 'mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-sky-400/50 bg-sky-500/10 px-4 py-3 font-bold text-sky-200 transition-colors hover:bg-sky-500/20';
+      ? 'flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-sky-100 transition-all duration-300 hover:bg-gradient-to-r hover:from-sky-500/15 hover:to-blue-600/15 hover:pl-5'
+      : variant === 'footer'
+        ? 'group inline-flex items-center gap-2.5 text-sm font-bold text-slate-400 transition-all duration-300 hover:text-sky-300 sm:text-base lg:text-lg'
+        : 'mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-3 font-bold text-white shadow-lg shadow-sky-600/20 transition-all duration-300 hover:from-sky-400 hover:to-blue-500 hover:shadow-xl hover:shadow-sky-600/30 hover:scale-[1.02]';
 
   return (
     <>
@@ -82,8 +84,17 @@ function PwaInstallButton({ variant = 'default', onBeforeInstall }) {
         className={triggerClassName}
         aria-label="Instalar Filmate"
       >
-        <Download className="h-5 w-5" />
-        {variant === 'header' ? <span className="hidden xl:inline">Instalar</span> : 'Instalar Filmate'}
+        {variant === 'footer' ? (
+          <>
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 transition-all duration-300 group-hover:bg-sky-500/20 group-hover:shadow-lg group-hover:shadow-sky-500/20 sm:h-9 sm:w-9 lg:h-10 lg:w-10">
+              <Play className="h-4 w-4 translate-x-[0.5px] text-slate-400 transition-colors duration-300 group-hover:text-sky-300 sm:h-[1.125rem] sm:w-[1.125rem] lg:h-5 lg:w-5" />
+            </span>
+            <span>Descarga la app</span>
+          </>
+        ) : (
+          <><Download className="h-5 w-5" />
+          {variant === 'header' ? <span className="hidden xl:inline">Instalar</span> : 'Instalar Filmate'}</>
+        )}
       </button>
 
       {showIosHelp && createPortal(
@@ -122,7 +133,7 @@ function PwaInstallButton({ variant = 'default', onBeforeInstall }) {
 }
 
 PwaInstallButton.propTypes = {
-  variant: PropTypes.oneOf(['default', 'header', 'menu']),
+  variant: PropTypes.oneOf(['default', 'header', 'menu', 'footer']),
   onBeforeInstall: PropTypes.func,
 };
 

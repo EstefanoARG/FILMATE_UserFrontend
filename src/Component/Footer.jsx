@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Music2, X, BookOpen, ChevronRight } from 'lucide-react';
+import { Music2, X, BookOpen, ChevronRight, Smartphone } from 'lucide-react';
+import PwaInstallButton from './PwaInstallButton.jsx';
 
 const itemDetails = {
   'Quienes somos':
@@ -74,11 +75,15 @@ export const Footer = () => {
                         <span>{item}</span>
                       </button>
 
-                      {isOpen && (
-                        <div className="mt-2 rounded-lg border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm font-medium leading-relaxed text-slate-300 sm:text-base">
+                      <div
+                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                          isOpen ? 'max-h-64 opacity-100 mt-2' : 'max-h-0 opacity-0'
+                        }`}
+                      >
+                        <div className="border-l-2 border-blue-400/40 pl-4 text-sm font-medium leading-relaxed text-slate-400 sm:text-base">
                           {itemDetails[item]}
                         </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
@@ -87,10 +92,14 @@ export const Footer = () => {
           ))}
         </div>
 
-        <div className="mt-8 flex flex-col gap-6 border-t border-slate-800 pt-6 sm:mt-12 sm:gap-8 sm:pt-8 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mt-8 flex flex-col gap-6 border-t border-slate-800 pt-6 sm:mt-12 sm:gap-8 sm:pt-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1 text-slate-100">
             <p className="text-sm font-bold sm:text-base lg:text-lg">Filmate S.A. | RUC 20429683581</p>
             <p className="text-sm font-bold sm:text-base lg:text-lg">Todos los derechos reservados 2026</p>
+          </div>
+
+          <div className="hidden lg:block">
+            <PwaInstallButton variant="footer" />
           </div>
 
           <div className="flex flex-col gap-4 lg:items-end">

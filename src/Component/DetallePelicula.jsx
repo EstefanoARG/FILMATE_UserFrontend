@@ -190,7 +190,7 @@ const ReviewCard = ({ review, modal = false }) => {
         ? 'rounded-2xl border border-slate-600/50 bg-slate-700/30 p-6 backdrop-blur-sm'
         : 'rounded-3xl border border-slate-700/50 bg-slate-800/30 p-5 backdrop-blur-sm';
     const initial = String(review.usuario || 'U').replace(/^@/, '').charAt(0).toUpperCase();
-    const profilePath = review.userId ? `/social/${review.userId}` : '/social';
+    const profilePath = review.userId ? `/social/perfil/${review.userId}` : '/social/perfil';
 
     return (
         <article className={cardClass}>
@@ -369,6 +369,7 @@ export const DetallePelicula = () => {
     const [seatMap, setSeatMap] = useState([]);
     const [seatMapLoading, setSeatMapLoading] = useState(false);
     const [seatMapError, setSeatMapError] = useState('');
+    const [seatLimitToast, setSeatLimitToast] = useState(false);
     const [showSeatHelp, setShowSeatHelp] = useState(false);
     const [showSeatConfirm, setShowSeatConfirm] = useState(false);
     const [movieDetails, setMovieDetails] = useState(null);
@@ -382,6 +383,20 @@ export const DetallePelicula = () => {
     const seatGridRef = useRef(null);
     const [seatGridWidth, setSeatGridWidth] = useState(0);
     const loadedSeatMapFunctionIdRef = useRef(null);
+
+    useEffect(() => {
+        if (selectedShow) {
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+        };
+    }, [selectedShow]);
 
     const pelicula = movieDetails || location.state?.movieState || location.state;
     const returnSeatSelection =
@@ -1107,7 +1122,7 @@ export const DetallePelicula = () => {
                     <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6 lg:px-8">
                         <div className="mx-auto w-full max-w-7xl pb-8">
                             <div className="grid gap-4 lg:grid-cols-[340px_1fr] lg:gap-6 lg:items-start">
-                            <aside className="order-2 rounded-[1.5rem] border border-slate-700/60 bg-[#061321] p-3 shadow-2xl shadow-black/30 sm:rounded-[2rem] sm:p-5 lg:order-1 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-10rem)] lg:overflow-y-auto">
+                            <aside>
                                 <div className="overflow-hidden rounded-[1.5rem] border-4 border-[#0e1c2c] sm:rounded-[2rem]">
                                     <img
                                         src={poster}
@@ -1115,16 +1130,13 @@ export const DetallePelicula = () => {
                                         className="h-[160px] w-full object-cover sm:h-[300px] lg:h-[420px]"
                                     />
                                 </div>
-
                                 <h3 className="mx-auto mt-3 w-full max-w-none px-2 text-center text-[clamp(1rem,4.5vw,2rem)] font-black uppercase leading-[0.98] tracking-tight text-transparent whitespace-normal break-normal [overflow-wrap:normal] [word-break:normal] [hyphens:none] [text-wrap:balance] [text-shadow:2px_2px_0_#ff2b50] sm:mt-5 sm:text-[clamp(1.2rem,2.7vw,2.4rem)] lg:text-[clamp(1.15rem,1.8vw,2.35rem)]">
                                     {titulo}
                                 </h3>
-
                                 <p className="mt-2 text-center text-sm font-bold text-[#5fa6ff] sm:mt-6 sm:text-2xl">
                                     {getShowFormat(selectedShow)}
                                     {selectedShow.idioma ? `, ${selectedShow.idioma}` : ''}
                                 </p>
-
                                 <div className="mt-3 space-y-3 sm:mt-6 sm:space-y-5">
                                     <div>
                                         <p className="text-lg font-extrabold text-white sm:text-2xl">
@@ -1134,56 +1146,47 @@ export const DetallePelicula = () => {
                                             {formatShowtimeDateTime(selectedShow, selectedShow?.selectedShowtimeDateKey || selectedShowtimeDateKey)}
                                         </p>
                                     </div>
-
                                     <div className="flex items-center gap-3 text-[#5fa6ff]">
                                         <Clock3 className="h-6 w-6 sm:h-8 sm:w-8" />
                                         <p className="text-lg font-bold sm:text-2xl">
                                             {formatShowtimeTime(selectedShow)}
                                         </p>
                                     </div>
-
                                     <div className="flex items-center gap-3 text-[#5fa6ff]">
                                         <Clapperboard className="h-6 w-6 sm:h-8 sm:w-8" />
                                         <p className="text-lg font-bold sm:text-2xl">{selectedShow.nombre_sala || selectedShow.sala || 'Sala por definir'}</p>
                                     </div>
                                 </div>
+                            </aside>
 
-                                <div className="mt-4 rounded-2xl border-t border-slate-700 pt-4 sm:mt-8 sm:pt-6">
-                                    <div className="grid grid-cols-1 gap-2 text-sm font-bold sm:gap-3 sm:text-lg">
-                                        <div className="flex items-center gap-4">
-                                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white bg-white text-slate-950 sm:h-10 sm:w-10">
-                                                <span className="h-4 w-4 rounded-full border border-slate-400 bg-slate-100 md:hidden" />
-                                                <span className="hidden md:block"><SeatGlyph seatSize={20} showNumber={false} /></span>
-                                            </span>
-                                            <span>Disponible</span>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-400 bg-emerald-400 text-slate-950 sm:h-10 sm:w-10">
-                                                <span className="h-4 w-4 rounded-full bg-emerald-700 md:hidden" />
-                                                <span className="hidden md:block"><SeatGlyph seatSize={20} selected showNumber={false} /></span>
-                                            </span>
-                                            <span>Seleccionado</span>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-700 text-slate-300 sm:h-10 sm:w-10">
-                                                <span className="h-4 w-4 rounded-full bg-red-600 md:hidden" />
-                                                <span className="hidden md:block"><SeatGlyph seatSize={20} unavailable showNumber={false} /></span>
-                                            </span>
-                                            <span>Ocupado</span>
-                                        </div>
+                            <section ref={seatGridRef}>
+                                <div className="mb-6 flex flex-wrap items-center justify-center gap-4 text-xs font-bold sm:text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex h-6 w-6 items-center justify-center rounded border border-white bg-white text-slate-950">
+                                            <SeatGlyph seatSize={14} showNumber={false} />
+                                        </span>
+                                        <span className="text-white/70">Disponible</span>
                                     </div>
-
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex h-6 w-6 items-center justify-center rounded border border-emerald-400 bg-emerald-400 text-slate-950">
+                                            <SeatGlyph seatSize={14} selected showNumber={false} />
+                                        </span>
+                                        <span className="text-white/70">Seleccionado</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-700 bg-slate-700 text-slate-300">
+                                            <SeatGlyph seatSize={14} unavailable showNumber={false} />
+                                        </span>
+                                        <span className="text-white/70">Ocupado</span>
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={() => setShowSeatHelp(true)}
-                                        className="mt-4 w-full rounded-full border border-slate-300 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-white/10 sm:mt-6 sm:px-5 sm:py-3 sm:text-xl"
+                                        className="rounded-full border border-slate-500 px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-white/10 sm:text-sm"
                                     >
                                         ? Ayuda
                                     </button>
                                 </div>
-                            </aside>
-
-                            <section ref={seatGridRef} className="order-1 overflow-hidden rounded-[1.5rem] border border-slate-700/60 bg-[#061321] p-3 shadow-2xl shadow-black/30 sm:rounded-[2rem] sm:p-6 lg:order-2">
                                 <div className="mb-4 text-center sm:mb-5">
                                     <div className="mx-auto h-6 w-full rounded-full bg-sky-200/90 text-center text-[0.75rem] font-black uppercase tracking-[0.22em] text-slate-600 sm:h-8 sm:text-2xl sm:tracking-[0.7em]">
                                         Pantalla
@@ -1359,12 +1362,10 @@ export const DetallePelicula = () => {
                                 <h1 className="mb-2 px-1 text-center text-[clamp(1.2rem,4.5vw,2.2rem)] font-bold leading-tight text-white whitespace-normal break-normal [overflow-wrap:normal] [word-break:normal] [hyphens:none] [text-wrap:balance] sm:text-[clamp(1.5rem,2.8vw,2.6rem)] lg:text-[clamp(1.35rem,1.55vw,2.6rem)]">
                                     {titulo}
                                 </h1>
-                                <div className="mb-4 flex flex-wrap justify-center gap-2">
-                                    {generoChips.map((item) => (
-                                        <span
-                                            key={item}
-                                            className="rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-100"
-                                        >
+                                <div className="mb-4 flex flex-wrap justify-center gap-x-1 text-xs font-medium text-white/50">
+                                    {generoChips.map((item, i) => (
+                                        <span key={item}>
+                                            {i > 0 && <span className="mx-1 text-white/20">·</span>}
                                             {item}
                                         </span>
                                     ))}
@@ -1446,7 +1447,8 @@ export const DetallePelicula = () => {
                                     return (
                                     <div key={cinema.id} className="bg-gradient-to-r from-slate-700/30 to-slate-800/30 backdrop-blur-sm rounded-3xl p-6 border border-slate-700/50">
                                         <h3 className="text-white text-xl font-bold mb-2">{cinema.nombre}</h3>
-                                        <div className="flex flex-nowrap gap-3 overflow-x-auto pb-2">
+                                        <div className="overflow-x-auto overflow-y-clip">
+                                            <div className="flex flex-nowrap gap-3 px-2 py-2">
                                             {funcionesOrdenadas.map((funcion) => (
                                                 <button
                                                     key={funcion.id_funcion}
@@ -1464,6 +1466,7 @@ export const DetallePelicula = () => {
                                                     </div>
                                                 </button>
                                             ))}
+                                            </div>
                                         </div>
                                     </div>
                                     );

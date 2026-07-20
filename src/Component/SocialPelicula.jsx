@@ -4,6 +4,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import Header from './Header.jsx';
 import StarRatingDisplay from './StarRatingDisplay.jsx';
 import { getAuthSession } from './authSession';
+import Toast from './Toast.jsx';
 import {
   createReviewComment,
   createMovieReview,
@@ -558,11 +559,7 @@ export const SocialPelicula = () => {
           </div>
         )}
 
-        {reviewSuccess && (
-          <div className="mt-6 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-100">
-            {reviewSuccess}
-          </div>
-        )}
+        <Toast type="success" message={reviewSuccess} onClose={() => setReviewSuccess('')} />
 
         {loading && !movie ? (
           <div className="mt-8 grid animate-pulse gap-8 lg:grid-cols-[280px_1fr]">
@@ -796,7 +793,7 @@ export const SocialPelicula = () => {
                   ) : visibleReviews.length > 0 ? (
                     visibleReviews.map((review) => {
                       const comments = reviewComments[review.id] || [];
-                      const profilePath = review.userId ? `/social/${review.userId}` : '/social';
+                      const profilePath = review.userId ? `/social/perfil/${review.userId}` : '/social/perfil';
                       const isExpanded = expandedReviewId === review.id;
 
                       return (

@@ -6,7 +6,7 @@ export const ProtectedRoute = ({ children, requireRegistered = false }) => {
   const location = useLocation();
 
   if (requireRegistered && !isRegisteredSession()) {
-    return <Navigate to="/menuPrincipal" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/iniciar-sesion" replace state={{ from: location.pathname }} />;
   }
 
   return children;

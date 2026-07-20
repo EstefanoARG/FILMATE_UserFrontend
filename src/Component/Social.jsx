@@ -25,6 +25,7 @@ import {
   searchMovies,
   searchUsers,
   unfollowUser,
+  visitProfile,
 } from './filmateApi';
 
 const FALLBACK_POSTER = 'https://placehold.co/400x600/0f172a/f8fafc?text=Filmate';
@@ -367,6 +368,16 @@ export const Social = () => {
       globalThis.window.clearTimeout(resetTimer);
     };
   }, [isOwnProfile, sessionUser, shouldLoadSocial, userId, viewedUserId]);
+
+  useEffect(() => {
+    if (!userId || !viewedUserId || isOwnProfile) return;
+
+    const timer = globalThis.window.setTimeout(() => {
+      visitProfile(userId, viewedUserId).catch(() => {});
+    }, 5000);
+
+    return () => globalThis.window.clearTimeout(timer);
+  }, [userId, viewedUserId, isOwnProfile]);
 
   useEffect(() => {
     const normalizedQuery = query.trim();
@@ -1018,7 +1029,7 @@ export const Social = () => {
 
     setQuery('');
     setUserSearchResults([]);
-    navigate(isSameUser(selectedUserId, userId) ? '/social' : `/social/${selectedUserId}`);
+    navigate(isSameUser(selectedUserId, userId) ? '/social/perfil' : `/social/perfil/${selectedUserId}`);
   };
 
   const handleSelectMovie = (movie) => {

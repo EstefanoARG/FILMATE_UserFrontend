@@ -20,6 +20,7 @@ import { clearAuthSession, getAuthSession, isRegisteredSession } from './authSes
 import { downloadTicketPdf, getUserPurchases } from './filmateApi';
 import { getSessionUserId, mergePurchaseHistory, PURCHASE_HISTORY_UPDATED, readPurchaseHistory } from './purchaseHistory';
 import PwaInstallButton from './PwaInstallButton.jsx';
+import NotificationBell from './NotificationBell';
 
 const formatCurrency = (value) => `S/. ${Number(value || 0).toFixed(2)}`;
 
@@ -295,7 +296,7 @@ export const Header = () => {
     { path: '/menuPrincipal', label: 'Cartelera', icon: Ticket, featured: true },
     canSeeSocial
       ? { path: '/social', label: 'Social', icon: UsersRound }
-      : { path: '/', label: 'Ingresar', icon: CircleUserRound },
+      : { path: '/iniciar-sesion', label: 'Ingresar', icon: CircleUserRound },
   ];
 
   const handleMobileNavigate = (path) => {
@@ -327,7 +328,6 @@ export const Header = () => {
                   className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 object-contain"
                 />
               </div>
-              <PwaInstallButton variant="header" />
             </div>
 
             <div className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:block">
@@ -359,77 +359,90 @@ export const Header = () => {
                 {mobileOpen ? <X className="h-6 w-6 text-white" /> : <Menu className="h-6 w-6 text-white" />}
               </button>
 
-              <div className="relative hidden sm:block">
-                <button
-                  type="button"
-                  onClick={() => setShowPurchases((current) => !current)}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-sky-400 hover:bg-slate-800"
-                >
-                  <ShoppingBag className="h-4 w-4 text-sky-200" />
-                  Mis compras
-                  <ChevronDown className={`h-4 w-4 transition-transform ${showPurchases ? 'rotate-180' : ''}`} />
-                </button>
+              {canSeeSocial && (
+                <div className="relative hidden sm:block">
+                  <button
+                    type="button"
+                    onClick={() => setShowPurchases((current) => !current)}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-sky-400 hover:bg-slate-800"
+                  >
+                    <ShoppingBag className="h-4 w-4 text-sky-200" />
+                    Mis compras
+                    <ChevronDown className={`h-4 w-4 transition-transform ${showPurchases ? 'rotate-180' : ''}`} />
+                  </button>
 
-                {showPurchases && (
-                  <div className="absolute right-0 top-full z-[60] mt-3 w-[25rem] overflow-hidden rounded-md border border-slate-700 bg-slate-950 shadow-2xl shadow-black/40">
-                    <div className="border-b border-slate-800 px-4 py-3">
-                      <p className="text-base font-black text-white">Mis compras</p>
-                      <p className="text-xs font-semibold text-white/45">Últimas 3 compras realizadas</p>
+                  {showPurchases && (
+                    <div className="absolute right-0 top-full z-[60] mt-3 w-[25rem] overflow-hidden rounded-md border border-slate-700 bg-slate-950 shadow-2xl shadow-black/40">
+                      <div className="border-b border-slate-800 px-4 py-3">
+                        <p className="text-base font-black text-white">Mis compras</p>
+                        <p className="text-xs font-semibold text-white/45">Últimas 3 compras realizadas</p>
+                      </div>
+
+                      <div className="max-h-96 overflow-y-auto">
+                        {latestPurchases.length > 0 ? (
+                          latestPurchases.map((purchase) => (
+                            <button
+                              key={purchase.id}
+                              type="button"
+                              onClick={() => openPurchaseDetail(purchase)}
+                              className="flex w-full gap-3 border-b border-slate-800 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-slate-900"
+                            >
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-sky-500/10 text-sky-200">
+                                {purchase.booking ? <Ticket className="h-6 w-6" /> : <ReceiptText className="h-6 w-6" />}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-black text-white">
+                                  {purchase.booking?.pelicula || purchase.type || 'Compra Filmate'}
+                                </p>
+                                <p className="mt-1 truncate text-xs font-semibold text-white/50">
+                                  {purchase.booking
+                                    ? `${purchase.booking.sede || 'Sede'} · ${purchase.booking.asientos?.length || 0} asiento(s)`
+                                    : `${purchase.snacks?.length || 0} producto(s) de dulcería`}
+                                </p>
+                                <p className="mt-1 text-xs font-bold text-sky-200">{formatDate(purchase.createdAt)}</p>
+                              </div>
+                              <p className="shrink-0 text-sm font-black text-white">{formatCurrency(purchase.total)}</p>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-4 py-8 text-center text-sm font-semibold text-white/50">
+                            Aún no hay compras registradas.
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAllPurchases(true);
+                          setShowPurchases(false);
+                        }}
+                        className="w-full border-t border-slate-800 px-4 py-3 text-center text-sm font-bold text-sky-300 transition-colors hover:bg-slate-900"
+                      >
+                        Ver todas mis compras
+                      </button>
                     </div>
+                  )}
+                </div>
+              )}
 
-                    <div className="max-h-96 overflow-y-auto">
-                      {latestPurchases.length > 0 ? (
-                        latestPurchases.map((purchase) => (
-                          <button
-                            key={purchase.id}
-                            type="button"
-                            onClick={() => openPurchaseDetail(purchase)}
-                            className="flex w-full gap-3 border-b border-slate-800 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-slate-900"
-                          >
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-sky-500/10 text-sky-200">
-                              {purchase.booking ? <Ticket className="h-6 w-6" /> : <ReceiptText className="h-6 w-6" />}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-black text-white">
-                                {purchase.booking?.pelicula || purchase.type || 'Compra Filmate'}
-                              </p>
-                              <p className="mt-1 truncate text-xs font-semibold text-white/50">
-                                {purchase.booking
-                                  ? `${purchase.booking.sede || 'Sede'} · ${purchase.booking.asientos?.length || 0} asiento(s)`
-                                  : `${purchase.snacks?.length || 0} producto(s) de dulcería`}
-                              </p>
-                              <p className="mt-1 text-xs font-bold text-sky-200">{formatDate(purchase.createdAt)}</p>
-                            </div>
-                            <p className="shrink-0 text-sm font-black text-white">{formatCurrency(purchase.total)}</p>
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-4 py-8 text-center text-sm font-semibold text-white/50">
-                          Aún no hay compras registradas.
-                        </div>
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAllPurchases(true);
-                        setShowPurchases(false);
-                      }}
-                      className="w-full border-t border-slate-800 px-4 py-3 text-center text-sm font-bold text-sky-300 transition-colors hover:bg-slate-900"
-                    >
-                      Ver todas mis compras
-                    </button>
-                  </div>
-                )}
+              <div className="hidden sm:block">
+                <NotificationBell />
               </div>
 
               <button
-                onClick={() => setShowLogoutModal(true)}
-                className="hidden transform items-center gap-2 rounded-full bg-red-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-500/30 transition-all duration-300 hover:scale-105 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/40 sm:flex sm:px-5 sm:text-base"
+                onClick={() => canSeeSocial ? setShowLogoutModal(true) : navigate('/iniciar-sesion')}
+                className={`hidden transform items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl sm:flex sm:px-5 sm:text-base ${
+                  canSeeSocial
+                    ? 'bg-red-500 shadow-red-500/30 hover:bg-red-600 hover:shadow-red-500/40'
+                    : 'bg-blue-600 shadow-blue-600/30 hover:bg-blue-700 hover:shadow-blue-600/40'
+                }`}
               >
-                <LogOut className="h-5 w-5" />
-                <span>Cerrar Sesión</span>
+                {canSeeSocial ? (
+                  <><LogOut className="h-5 w-5" /><span>Cerrar Sesión</span></>
+                ) : (
+                  <><CircleUserRound className="h-5 w-5" /><span>Iniciar sesión</span></>
+                )}
               </button>
             </div>
           </div>
@@ -454,25 +467,38 @@ export const Header = () => {
                 </button>
               ))}
 
-              <button
-                onClick={() => {
-                  setMobileOpen(false);
-                  setShowAllPurchases(true);
-                }}
-                className="w-full rounded-lg px-3 py-2 text-left text-base font-semibold text-gray-200 transition-all duration-200 hover:bg-slate-800"
-              >
-                Mis compras
-              </button>
+              {canSeeSocial && (
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setShowAllPurchases(true);
+                  }}
+                  className="w-full rounded-lg px-3 py-2 text-left text-base font-semibold text-gray-200 transition-all duration-200 hover:bg-slate-800"
+                >
+                  Mis compras
+                </button>
+              )}
 
               <button
                 onClick={() => {
                   setMobileOpen(false);
-                  setShowLogoutModal(true);
+                  if (canSeeSocial) {
+                    setShowLogoutModal(true);
+                  } else {
+                    navigate('/iniciar-sesion');
+                  }
                 }}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-red-500 px-4 py-2.5 font-semibold text-white shadow-lg shadow-red-500/30 transition-all duration-300 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/40"
+                className={`mt-2 flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-xl ${
+                  canSeeSocial
+                    ? 'bg-red-500 shadow-red-500/30 hover:bg-red-600 hover:shadow-red-500/40'
+                    : 'bg-blue-600 shadow-blue-600/30 hover:bg-blue-700 hover:shadow-blue-600/40'
+                }`}
               >
-                <LogOut className="h-5 w-5" />
-                <span>Cerrar Sesión</span>
+                {canSeeSocial ? (
+                  <><LogOut className="h-5 w-5" /><span>Cerrar Sesión</span></>
+                ) : (
+                  <><CircleUserRound className="h-5 w-5" /><span>Iniciar sesión</span></>
+                )}
               </button>
             </div>
           </div>
@@ -488,36 +514,63 @@ export const Header = () => {
             aria-label="Opciones de cuenta"
             onClick={(event) => event.stopPropagation()}
           >
-            <PwaInstallButton variant="menu" />
+            {canSeeSocial && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    navigate('/social/perfil');
+                  }}
+                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-slate-100 transition-colors hover:bg-slate-800"
+                >
+                  <CircleUserRound className="h-5 w-5 text-sky-300" />
+                  <span className="flex-1">Mi perfil</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setShowAllPurchases(true);
+                  }}
+                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-slate-100 transition-colors hover:bg-slate-800"
+                >
+                  <ShoppingBag className="h-5 w-5 text-sky-300" />
+                  <span className="flex-1">Mis compras</span>
+                  {purchases.length > 0 && (
+                    <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-black text-sky-200">
+                      {purchases.length}
+                    </span>
+                  )}
+                </button>
+
+                <NotificationBell variant="menu" />
+              </>
+            )}
 
             <button
               type="button"
               onClick={() => {
                 setMobileOpen(false);
-                setShowAllPurchases(true);
+                if (canSeeSocial) {
+                  setShowLogoutModal(true);
+                } else {
+                  navigate('/iniciar-sesion');
+                }
               }}
-              className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-slate-100 transition-colors hover:bg-slate-800"
+              className={`mt-1 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold transition-colors ${
+                canSeeSocial
+                  ? 'text-red-300 hover:bg-red-500/10'
+                  : 'text-blue-300 hover:bg-blue-500/10'
+              }`}
             >
-              <ShoppingBag className="h-5 w-5 text-sky-300" />
-              <span className="flex-1">Mis compras</span>
-              {purchases.length > 0 && (
-                <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-black text-sky-200">
-                  {purchases.length}
-                </span>
+              {canSeeSocial ? (
+                <><LogOut className="h-5 w-5" /> Cerrar sesión</>
+              ) : (
+                <><CircleUserRound className="h-5 w-5" /> Iniciar sesión</>
               )}
             </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setMobileOpen(false);
-                setShowLogoutModal(true);
-              }}
-              className="mt-1 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left font-semibold text-red-300 transition-colors hover:bg-red-500/10"
-            >
-              <LogOut className="h-5 w-5" />
-              Cerrar sesión
-            </button>
+            <PwaInstallButton variant="menu" />
           </div>
         </div>
       )}
