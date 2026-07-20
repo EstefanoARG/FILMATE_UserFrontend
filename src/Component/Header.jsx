@@ -640,13 +640,13 @@ export const Header = () => {
               <div className="flex w-full gap-4">
                 <button
                   onClick={() => setShowLogoutModal(false)}
-                  className="h-[48px] flex-1 rounded-full bg-slate-700 px-6 font-semibold text-white transition-all duration-300 hover:bg-slate-600"
+                  className="h-[52px] min-h-[52px] flex-1 rounded-full bg-slate-700 px-6 font-semibold text-white transition-all duration-300 hover:bg-slate-600"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="h-[48px] flex-1 rounded-full bg-red-500 px-6 font-semibold text-white shadow-lg shadow-red-500/30 transition-all duration-300 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/40"
+                  className="h-[52px] min-h-[52px] flex-1 rounded-full bg-red-500 px-6 font-semibold text-white shadow-lg shadow-red-500/30 transition-all duration-300 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/40"
                 >
                   Cerrar Sesión
                 </button>
