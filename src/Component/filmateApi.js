@@ -631,14 +631,7 @@ export function normalizePurchase(purchase) {
       transaction.tickets,
     ['results', 'boletos', 'tickets', 'items']
   );
-  const qrToken =
-    purchase.codigo_qr_token ||
-    purchase.qrValue ||
-    purchase.qr ||
-    tickets.find((ticket) => ticket?.codigo_qr_token || ticket?.qrValue || ticket?.qr)?.codigo_qr_token ||
-    tickets.find((ticket) => ticket?.codigo_qr_token || ticket?.qrValue || ticket?.qr)?.qrValue ||
-    tickets.find((ticket) => ticket?.codigo_qr_token || ticket?.qrValue || ticket?.qr)?.qr ||
-    '';
+  const qrToken = '';
 
   const id = transaction.id_transaccion || transaction.id || purchase.id_ticket || purchase.id || qrToken;
   const movieTitle = movie?.titulo || purchase.pelicula_titulo || purchase.titulo_pelicula || purchase.titulo || '';
@@ -671,7 +664,7 @@ export function normalizePurchase(purchase) {
     method: transaction.metodo_pago || purchase.metodo_pago || purchase.method || 'Pago',
     total,
     type: movieTitle ? 'Reserva y dulceria' : 'Solo dulceria',
-    qrValue: qrToken || (id ? `FILMATE|TXN:${id}|TOTAL:${total.toFixed(2)}` : ''),
+    qrValue: id ? `FILMATE|TXN:${id}|TOTAL:${total.toFixed(2)}` : '',
     booking: movieTitle
       ? {
           pelicula: movieTitle,
@@ -1159,9 +1152,9 @@ export async function visitProfile(visitorId, visitedUserId) {
   });
 }
 
-export async function getNotifications(userId, limit = 20) {
+export async function getNotifications(userId, limit = 20, offset = 0) {
   if (!userId) return { notifications: [], unread_count: 0 };
-  const data = await request(`/client/social/notifications?user_id=${userId}&limit=${limit}`);
+  const data = await request(`/client/social/notifications?user_id=${userId}&limit=${limit}&offset=${offset}`);
   return data || { notifications: [], unread_count: 0 };
 }
 

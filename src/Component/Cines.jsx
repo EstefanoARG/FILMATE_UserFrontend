@@ -54,7 +54,7 @@ export const Cines = () => {
     cine?.mapa || `https://www.google.com/maps?q=${encodeURIComponent(cine?.direccion || '')}&output=embed`;
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       <Header />
 
       <main className="w-full flex-1 px-4 py-8 sm:px-6 sm:py-12 lg:px-8">

@@ -12,7 +12,7 @@ export default function SuggestedUsers() {
 
   useEffect(() => {
     if (!userId) return;
-    getSuggestedUsers(userId, 5).then(setUsers).catch(() => {});
+    getSuggestedUsers(userId, 4).then(setUsers).catch(() => {});
   }, [userId]);
 
   if (!users.length) return null;

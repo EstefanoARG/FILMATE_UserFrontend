@@ -98,12 +98,8 @@ const bookingContextShape = PropTypes.shape({
   returnToSeatSelection: PropTypes.object,
 });
 
-const buildCompactQrValue = ({ token, transactionId, pedidoNumber, total }) => {
-  const compactValue = `FILMATE|TXN:${transactionId || 'PEND'}|PED:${pedidoNumber}|TOTAL:${Number(total || 0).toFixed(2)}`;
-  if (!token) return compactValue;
-
-  const normalizedToken = String(token);
-  return normalizedToken.length <= 96 ? normalizedToken : compactValue;
+const buildCompactQrValue = ({ transactionId, pedidoNumber, total }) => {
+  return `FILMATE|TXN:${transactionId || 'PEND'}|PED:${pedidoNumber}|TOTAL:${Number(total || 0).toFixed(2)}`;
 };
 
 const getCategoryScrollState = (container) => {
@@ -147,80 +143,62 @@ function TicketContent({ carrito, total, pedidoNumber, fechaCompra, bookingConte
         </div>
       </div>
 
-      <div className="space-y-6 px-6 py-6">
+      <div className="px-6 py-6">
         {bookingContext && (
-          <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-blue-300">Reserva de película</p>
-            <p className="mt-2 text-lg font-bold text-white">{bookingContext.pelicula}</p>
-            <p className="mt-1 text-sm text-slate-200">
-              {bookingContext.sede} · {bookingContext.horario} · {bookingContext.sala}
+          <div className="pb-4">
+            <p className="text-lg font-bold text-white">{bookingContext.pelicula}</p>
+            <p className="mt-0.5 text-sm text-slate-400">
+              {bookingContext.sede} &middot; {bookingContext.horario} &middot; {bookingContext.sala}
             </p>
             <p className="mt-2 text-sm text-slate-300">
-              Asientos: {bookingContext.asientos?.length ? bookingContext.asientos.join(', ') : 'Sin asientos seleccionados'}
+              {bookingContext.asientos?.length ? bookingContext.asientos.join(', ') : 'Sin asientos'}
             </p>
           </div>
         )}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm text-slate-400">Número de pedido</p>
-              <p className="text-2xl font-bold text-white">{pedidoNumber}</p>
-              {transactionId && (
-                <p className="mt-1 text-xs uppercase tracking-[0.2em] text-blue-300">
-                  Transacción #{transactionId}
-                </p>
-              )}
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-slate-400">Fecha</p>
-              <p className="text-sm text-slate-200">{fechaCompra.toLocaleString('es-PE')}</p>
-            </div>
-          </div>
-        </div>
 
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">
-            Detalle del pedido
+        <div className="flex items-start justify-between gap-4 border-t border-slate-700/50 pt-4">
+          <div>
+            <p className="text-sm text-slate-500">Pedido</p>
+            <p className="mt-0.5 text-2xl font-bold tracking-tight text-white">{pedidoNumber}</p>
+            {transactionId && (
+              <p className="mt-0.5 text-xs text-slate-500">Transacción #{transactionId}</p>
+            )}
+          </div>
+          <p className="shrink-0 text-right text-sm text-slate-500">
+            {fechaCompra.toLocaleString('es-PE')}
           </p>
-          <div className="space-y-3">
-            {carrito.map((item) => (
-              <div key={item.id} className="flex items-start justify-between gap-4 border-b border-slate-800 pb-3 last:border-b-0 last:pb-0">
-                <div>
-                  <p className="font-semibold text-white">{item.nombre}</p>
-                  <p className="text-sm text-slate-400">
-                    {item.cantidad} x S/. {item.precio.toFixed(2)}
-                  </p>
-                </div>
-                <p className="font-semibold text-blue-300">
-                  S/. {(item.precio * item.cantidad).toFixed(2)}
-                </p>
+        </div>
+
+        <div className="mt-4 border-t border-slate-700/50 pt-4">
+          {carrito.map((item, idx) => (
+            <div key={item.id} className={`flex items-start justify-between gap-4 ${idx < carrito.length - 1 ? 'pb-3' : ''}`}>
+              <div>
+                <p className="text-sm font-semibold text-white">{item.nombre}</p>
+                <p className="text-xs text-slate-500">{item.cantidad} x S/. {item.precio.toFixed(2)}</p>
               </div>
-            ))}
+              <p className="shrink-0 text-sm font-semibold text-white">S/. {(item.precio * item.cantidad).toFixed(2)}</p>
+            </div>
+          ))}
+          <div className="mt-3 flex items-center justify-between border-t border-slate-700/50 pt-3 text-base font-bold text-white">
+            <span>Total</span>
+            <span>S/. {total.toFixed(2)}</span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-200">Total a pagar</span>
-            <span className="text-2xl font-bold text-white">S/. {total.toFixed(2)}</span>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800 bg-white p-4">
-          <div className="mx-auto flex h-[210px] w-[210px] items-center justify-center">
+        <div className="mt-4 flex justify-center border-t border-slate-700/50 pt-4">
+          <div className="rounded-xl bg-white p-4">
             <QRCodeCanvas
               value={qrValue || `FILMATE-${pedidoNumber}-${total.toFixed(2)}`}
-              size={170}
+              size={150}
               level="H"
               marginSize={4}
               fgColor="#0f172a"
               bgColor="#ffffff"
-              className="block"
             />
           </div>
         </div>
 
-        <p className="text-center text-sm text-slate-400">
+        <p className="mt-3 text-center text-xs text-slate-500">
           Presenta este QR en el mostrador para recoger tu pedido.
         </p>
       </div>
@@ -259,7 +237,7 @@ function VerificationModal({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 sm:items-center sm:p-4">
       <div className="w-full max-w-[95vw] overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl sm:max-w-md">
         <div className="flex items-center justify-between border-b border-slate-700 px-4 py-4 sm:px-6">
-          <h2 className="text-lg font-bold text-white sm:text-xl">Verifica tu compra</h2>
+          <h2 className="text-lg font-bold text-white sm:text-xl">Verificar compra</h2>
           <button
             onClick={() => onRequestExit('dulceria')}
             className="text-slate-400 transition-colors hover:text-white"
@@ -269,32 +247,27 @@ function VerificationModal({
         </div>
 
         <div className="max-h-[85vh] overflow-y-auto px-4 py-5 sm:px-6">
-          <p className="mb-4 text-sm text-slate-300">
-            Tu pedido de confitería será preparado con estos productos.
-          </p>
-
-          <div className="mb-6 space-y-3 border-y border-slate-700 py-4">
+          <div className="space-y-3 border-b border-slate-700/50 pb-4">
             {carrito.map((item) => (
               <div key={item.id} className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-white">{item.nombre}</p>
-                  <p className="text-sm text-slate-400">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-white truncate">{item.nombre}</p>
+                  <p className="text-xs text-slate-400">
                     {item.cantidad} x S/. {item.precio.toFixed(2)}
                   </p>
                 </div>
-
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1.5">
                   <button
                     onClick={() => onUpdateQuantity(item.id, item.cantidad - 1)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-yellow-400 text-black transition-colors hover:bg-yellow-500"
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-slate-200 transition-colors hover:bg-slate-600"
                   >
                     <Minus className="h-3 w-3" />
                   </button>
-                  <span className="w-5 text-center text-white">{item.cantidad}</span>
+                  <span className="w-5 text-center text-sm text-white">{item.cantidad}</span>
                   <button
                     onClick={() => onUpdateQuantity(item.id, item.cantidad + 1)}
                     disabled={Number.isFinite(item.stock) && item.cantidad >= item.stock}
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-yellow-400 text-black transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-slate-200 transition-colors hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Plus className="h-3 w-3" />
                   </button>
@@ -303,24 +276,24 @@ function VerificationModal({
             ))}
           </div>
 
-          <div className="mb-6 rounded-xl bg-slate-800 p-4">
-            <div className="flex items-center justify-between text-slate-300">
+          <div className="mt-4 space-y-1.5 text-sm text-slate-400">
+            <div className="flex items-center justify-between">
               <span>Subtotal snacks</span>
               <span>S/. {snacksTotal.toFixed(2)}</span>
             </div>
             {isSeatFlow && (
-              <div className="mt-2 flex items-center justify-between text-slate-300">
+              <div className="flex items-center justify-between">
                 <span>Subtotal asientos</span>
                 <span>S/. {reservationTotal.toFixed(2)}</span>
               </div>
             )}
-            <div className="mt-2 flex items-center justify-between border-t border-slate-700 pt-2 text-lg font-bold text-white">
+            <div className="flex items-center justify-between border-t border-slate-700/50 pt-1.5 text-base font-bold text-white">
               <span>Total</span>
               <span>S/. {total.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="mt-6 flex gap-3">
             <button
               onClick={() => onRequestExit('dulceria')}
               className="flex-1 rounded-lg bg-slate-700 py-2 font-semibold text-white transition-colors hover:bg-slate-600"
@@ -329,7 +302,7 @@ function VerificationModal({
             </button>
             <button
               onClick={onPay}
-              className="flex-1 rounded-lg bg-red-600 py-2 font-semibold text-white transition-colors hover:bg-red-700"
+              className="flex-1 rounded-lg bg-emerald-600 py-2 font-semibold text-white transition-colors hover:bg-emerald-700"
             >
               Pagar ahora
             </button>
@@ -525,228 +498,194 @@ function PaymentModal({
         </div>
 
         <div className="px-4 py-5 sm:px-6">
-          <div className="mb-4 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4">
-            <p className="text-sm font-medium text-slate-300">Total a cobrar</p>
-            <p className="mt-1 text-3xl font-extrabold tracking-tight text-white">S/. {paymentTotal.toFixed(2)}</p>
-            <div className="mt-3 space-y-1 text-sm text-slate-300">
+          <p className="text-sm text-slate-400">Total a cobrar</p>
+          <p className="text-3xl font-extrabold tracking-tight text-white">S/. {paymentTotal.toFixed(2)}</p>
+
+          {isSeatFlow && (
+            <div className="mt-4 space-y-1 border-t border-slate-700/50 pt-4 text-sm text-slate-400">
               <div className="flex items-center justify-between">
-                <span>Subtotal</span>
-                <span>S/. {paymentSubtotal.toFixed(2)}</span>
+                <span>Asientos ({seatsCount})</span>
+                <span>S/. {reservationTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Snacks</span>
+                <span>S/. {(paymentSubtotal - reservationTotal).toFixed(2)}</span>
               </div>
             </div>
-            {isSeatFlow && (
-              <p className="mt-2 text-sm leading-relaxed text-slate-200">
-                Asientos: {seatsCount} · Subtotal asientos: S/. {reservationTotal.toFixed(2)}
-              </p>
-            )}
-            {isSeatFlow && skipSnacksForReservation && (
-              <p className="mt-2 text-sm font-semibold leading-relaxed text-emerald-300">
-                Snacks omitidos: no se cobrarán en esta compra.
-              </p>
-            )}
-          </div>
+          )}
+          {isSeatFlow && skipSnacksForReservation && (
+            <p className="mt-2 text-sm text-emerald-400">Snacks omitidos.</p>
+          )}
 
           {checkoutError && (
-            <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-              {checkoutError}
-            </div>
+            <p className="mt-4 text-sm text-red-400">{checkoutError}</p>
           )}
 
           {bookingContext && (
-            <div className="mb-4 rounded-xl border border-slate-700 bg-slate-800 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Película y asientos</p>
-              <p className="mt-2 text-lg font-bold text-white">{bookingContext.pelicula}</p>
-              <p className="mt-1 text-sm leading-relaxed text-slate-300">
-                {bookingContext.sede} · {bookingContext.horario} · {bookingContext.sala}
+            <div className="mt-4 border-t border-slate-700/50 pt-4">
+              <p className="text-sm font-semibold text-white">{bookingContext.pelicula}</p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {bookingContext.sede} &middot; {bookingContext.horario} &middot; {bookingContext.sala}
               </p>
-              <p className="mt-2 text-sm text-slate-300">
+              <p className="mt-1.5 text-xs text-slate-400">
                 {bookingContext.asientos?.length ? bookingContext.asientos.join(', ') : 'Sin asientos'}
               </p>
             </div>
           )}
 
-          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {paymentOptions.map((option) => {
-              const Icon = option.icon;
-              const active = selectedPaymentMethod === option.id;
+          <div className="mt-4 border-t border-slate-700/50 pt-4">
+            <div className="flex gap-2">
+              {paymentOptions.map((option) => {
+                const Icon = option.icon;
+                const active = selectedPaymentMethod === option.id;
 
-              return (
-                <button
-                  key={option.id}
-                  onClick={() => onSelectPaymentMethod(option.id)}
-                  className={`rounded-2xl border p-4 text-left transition-all ${
-                    active
-                      ? 'border-blue-400 bg-blue-500/10 ring-2 ring-blue-400/40'
-                      : 'border-slate-700 bg-slate-800 hover:border-slate-500 hover:bg-slate-700'
-                  }`}
-                >
-                  <div className="mb-2 flex items-center gap-3">
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                        active ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-700 text-slate-200'
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold leading-tight text-white">{option.label}</p>
-                      <p className="mt-1 text-xs leading-snug text-slate-400">{option.description}</p>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mb-6 rounded-2xl border border-slate-700 bg-slate-950/70 p-4">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-black text-white">Pago seguro</p>
-                <p className="mt-1 text-xs font-semibold text-slate-400">Completa tu compra con un método de pago confiable.</p>
-              </div>
-              <div className="flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-200">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                SEGURA
-              </div>
+                return (
+                  <button
+                    key={option.id}
+                    onClick={() => onSelectPaymentMethod(option.id)}
+                    className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
+                      active
+                        ? 'border-sky-400 bg-sky-500/10 text-sky-200'
+                        : 'border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
 
-            {hasDemoCredentials && (
-              <div className="mb-4 flex flex-col gap-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-black text-amber-100">Pasarela de demostración</p>
-                  <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-100/70">
-                    Usa credenciales aprobadas del backend sin ingresar datos reales.
-                  </p>
-                </div>
+            <div className="mt-4 space-y-3">
+              {hasDemoCredentials && (
                 <button
                   type="button"
                   onClick={applyDemoCredentials}
-                  className="shrink-0 rounded-lg border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-sm font-black text-amber-100 transition-colors hover:bg-amber-300/20"
+                  className="w-full rounded-lg border border-dashed border-slate-600 px-3 py-2 text-xs font-semibold text-slate-400 transition-colors hover:border-slate-500 hover:text-slate-200"
                 >
                   Usar datos de prueba
                 </button>
-              </div>
-            )}
+              )}
 
-            {selectedPaymentMethod === 'tarjeta' ? (
-              <div className="space-y-3">
-                <label className="block">
-                  <span className="text-xs font-bold text-slate-400">Numero de tarjeta</span>
-                  <div className="mt-1 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 focus-within:border-sky-400">
-                    <CreditCard className="h-4 w-4 shrink-0 text-sky-300" />
+              {selectedPaymentMethod === 'tarjeta' ? (
+                <div className="space-y-3">
+                  <label className="block">
+                    <span className="text-xs font-semibold text-slate-400">Número</span>
+                    <div className="mt-1 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 focus-within:border-sky-400">
+                      <CreditCard className="h-4 w-4 shrink-0 text-sky-300" />
+                      <input
+                        value={cardForm.number}
+                        onChange={(event) => setCardForm((current) => ({ ...current, number: formatCardNumber(event.target.value) }))}
+                        inputMode="numeric"
+                        autoComplete="cc-number"
+                        placeholder="1234 1234 1234 1234"
+                        className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/30"
+                      />
+                      <span className="text-xs font-black text-sky-300">{cardBrand}</span>
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-xs font-semibold text-slate-400">Titular</span>
                     <input
-                      value={cardForm.number}
-                      onChange={(event) => setCardForm((current) => ({ ...current, number: formatCardNumber(event.target.value) }))}
-                      inputMode="numeric"
-                      autoComplete="cc-number"
-                      placeholder="1234 1234 1234 1234"
-                      className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/30"
+                      value={cardForm.holder}
+                      onChange={(event) => setCardForm((current) => ({ ...current, holder: event.target.value.toUpperCase() }))}
+                      autoComplete="cc-name"
+                      placeholder="NOMBRE Y APELLIDO"
+                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
                     />
-                    <span className="text-xs font-black text-sky-300">{cardBrand}</span>
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="block">
+                      <span className="text-xs font-semibold text-slate-400">Vence</span>
+                      <input
+                        value={cardForm.expiry}
+                        onChange={(event) => setCardForm((current) => ({ ...current, expiry: formatExpiry(event.target.value) }))}
+                        inputMode="numeric"
+                        autoComplete="cc-exp"
+                        placeholder="MM/AA"
+                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold text-slate-400">CVV</span>
+                      <input
+                        value={cardForm.cvv}
+                        onChange={(event) => setCardForm((current) => ({ ...current, cvv: onlyDigits(event.target.value).slice(0, 4) }))}
+                        inputMode="numeric"
+                        autoComplete="cc-csc"
+                        type="password"
+                        placeholder="123"
+                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
+                      />
+                    </label>
                   </div>
-                </label>
 
-                <label className="block">
-                  <span className="text-xs font-bold text-slate-400">Titular</span>
-                  <input
-                    value={cardForm.holder}
-                    onChange={(event) => setCardForm((current) => ({ ...current, holder: event.target.value.toUpperCase() }))}
-                    autoComplete="cc-name"
-                    placeholder="NOMBRE Y APELLIDO"
-                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
-                  />
-                </label>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="block">
-                    <span className="text-xs font-bold text-slate-400">Vence</span>
-                    <input
-                      value={cardForm.expiry}
-                      onChange={(event) => setCardForm((current) => ({ ...current, expiry: formatExpiry(event.target.value) }))}
-                      inputMode="numeric"
-                      autoComplete="cc-exp"
-                      placeholder="MM/AA"
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-xs font-bold text-slate-400">CVV</span>
-                    <input
-                      value={cardForm.cvv}
-                      onChange={(event) => setCardForm((current) => ({ ...current, cvv: onlyDigits(event.target.value).slice(0, 4) }))}
-                      inputMode="numeric"
-                      autoComplete="cc-csc"
-                      type="password"
-                      placeholder="123"
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
-                    />
-                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="block">
+                      <span className="text-xs font-semibold text-slate-400">Documento</span>
+                      <input
+                        value={cardForm.document}
+                        onChange={(event) => setCardForm((current) => ({ ...current, document: onlyDigits(event.target.value).slice(0, 12) }))}
+                        inputMode="numeric"
+                        placeholder="DNI"
+                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold text-slate-400">Cuotas</span>
+                      <select
+                        value={cardForm.installments}
+                        onChange={(event) => setCardForm((current) => ({ ...current, installments: event.target.value }))}
+                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-sky-400"
+                      >
+                        <option value="1">1 cuota sin intereses</option>
+                        <option value="3">3 cuotas</option>
+                        <option value="6">6 cuotas</option>
+                      </select>
+                    </label>
+                  </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
+              ) : (
+                <div className="space-y-3">
                   <label className="block">
-                    <span className="text-xs font-bold text-slate-400">Documento</span>
+                    <span className="text-xs font-semibold text-slate-400">Celular asociado a {selectedPayment?.label}</span>
                     <input
-                      value={cardForm.document}
-                      onChange={(event) => setCardForm((current) => ({ ...current, document: onlyDigits(event.target.value).slice(0, 12) }))}
+                      value={walletForm.phone}
+                      onChange={(event) => setWalletForm((current) => ({ ...current, phone: onlyDigits(event.target.value).slice(0, 9) }))}
+                      inputMode="numeric"
+                      placeholder="999999999"
+                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-semibold text-slate-400">Documento</span>
+                    <input
+                      value={walletForm.document}
+                      onChange={(event) => setWalletForm((current) => ({ ...current, document: onlyDigits(event.target.value).slice(0, 12) }))}
                       inputMode="numeric"
                       placeholder="DNI"
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
+                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
                     />
                   </label>
                   <label className="block">
-                    <span className="text-xs font-bold text-slate-400">Cuotas</span>
-                    <select
-                      value={cardForm.installments}
-                      onChange={(event) => setCardForm((current) => ({ ...current, installments: event.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-sky-400"
-                    >
-                      <option value="1">1 cuota sin intereses</option>
-                      <option value="3">3 cuotas</option>
-                      <option value="6">6 cuotas</option>
-                    </select>
+                    <span className="text-xs font-semibold text-slate-400">Código de aprobación</span>
+                    <input
+                      value={walletForm.approvalCode}
+                      onChange={(event) => setWalletForm((current) => ({ ...current, approvalCode: onlyDigits(event.target.value).slice(0, 6) }))}
+                      inputMode="numeric"
+                      placeholder="6 dígitos"
+                      className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
+                    />
                   </label>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <label className="block">
-                  <span className="text-xs font-bold text-slate-400">Celular asociado a {selectedPayment?.label}</span>
-                  <input
-                    value={walletForm.phone}
-                    onChange={(event) => setWalletForm((current) => ({ ...current, phone: onlyDigits(event.target.value).slice(0, 9) }))}
-                    inputMode="numeric"
-                    placeholder="999999999"
-                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-xs font-bold text-slate-400">Documento</span>
-                  <input
-                    value={walletForm.document}
-                    onChange={(event) => setWalletForm((current) => ({ ...current, document: onlyDigits(event.target.value).slice(0, 12) }))}
-                    inputMode="numeric"
-                    placeholder="DNI"
-                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-xs font-bold text-slate-400">Codigo de aprobacion</span>
-                  <input
-                    value={walletForm.approvalCode}
-                    onChange={(event) => setWalletForm((current) => ({ ...current, approvalCode: onlyDigits(event.target.value).slice(0, 6) }))}
-                    inputMode="numeric"
-                    placeholder="6 digitos"
-                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none placeholder:text-white/30 focus:border-sky-400"
-                  />
-                </label>
-              </div>
-            )}
-
-            <div className="mt-4 flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300">
-              <LockKeyhole className="h-4 w-4 text-emerald-300" />
-              <span>{validation.valid ? 'Datos listos para procesar.' : validation.message}</span>
+              )}
             </div>
+
+            <p className={`mt-4 text-xs ${validation.valid ? 'text-emerald-400' : 'text-red-400'}`}>
+              {validation.valid ? 'Completa tu compra con un método de pago confiable.' : validation.message}
+            </p>
           </div>
 
           <div className="mt-6 flex gap-3 pb-1">
@@ -1026,9 +965,7 @@ export const Dulceria = () => {
   const transactionId = checkoutResult?.id_transaccion || checkoutResult?.transaccion?.id_transaccion;
   const receiptCart = isSeatFlow && skipSnacksForReservation ? [] : carrito;
   const receiptTotal = Number(checkoutResult?.monto_total ?? checkoutResult?.transaccion?.monto_total ?? paymentTotal);
-  const primaryQrToken = checkoutResult?.boletos?.find((ticket) => ticket?.codigo_qr_token)?.codigo_qr_token;
   const qrValue = buildCompactQrValue({
-    token: primaryQrToken,
     transactionId,
     pedidoNumber,
     total: receiptTotal,
@@ -1037,7 +974,6 @@ export const Dulceria = () => {
   const buildPurchaseHistoryItem = (response = null, paymentData = {}) => {
     const nextTransactionId = response?.id_transaccion || response?.transaccion?.id_transaccion || transactionId;
     const nextReceiptTotal = Number(response?.monto_total ?? response?.transaccion?.monto_total ?? paymentTotal);
-    const nextPrimaryQrToken = response?.boletos?.find((ticket) => ticket?.codigo_qr_token)?.codigo_qr_token;
     const nextPaymentMethod =
       response?.metodo_pago ||
       response?.transaccion?.metodo_pago ||
@@ -1054,7 +990,6 @@ export const Dulceria = () => {
       total: nextReceiptTotal,
       type: isSeatFlow ? 'Reserva y dulcería' : 'Solo dulcería',
       qrValue: buildCompactQrValue({
-        token: nextPrimaryQrToken,
         transactionId: nextTransactionId,
         pedidoNumber,
         total: nextReceiptTotal,
@@ -1784,7 +1719,7 @@ export const Dulceria = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       <Header />
 
       <main className="flex-1 w-full px-4 py-12 sm:px-6 lg:px-8">
@@ -1806,33 +1741,32 @@ export const Dulceria = () => {
           )}
 
           {bookingContext && (
-            <div className="mb-8 rounded-3xl border border-blue-400/40 bg-blue-500/10 p-5 text-white shadow-lg shadow-blue-950/20">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="mb-6 border-b border-slate-700/50 pb-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.25em] text-blue-300">Reserva seleccionada</p>
-                  <h2 className="mt-1 text-2xl font-bold">{bookingContext.pelicula}</h2>
-                  <p className="mt-2 text-slate-200">
-                    {bookingContext.sede} · {bookingContext.horario} · {bookingContext.sala}
+                  <h2 className="text-xl font-bold text-white sm:text-2xl">{bookingContext.pelicula}</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {bookingContext.sede} &middot; {bookingContext.horario} &middot; {bookingContext.sala}
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/20 bg-slate-950/40 px-4 py-3">
-                  <p className="text-sm text-slate-300">Asientos elegidos</p>
-                  <p className="text-lg font-bold text-white">
-                    {bookingContext.asientos?.length ? bookingContext.asientos.join(', ') : 'Sin asientos'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 flex justify-end">
                 <button
                   onClick={volverAAsientos}
-                  className="inline-flex items-center gap-2 rounded-full border border-sky-400/40 bg-slate-950/40 px-4 py-2 text-sm font-semibold text-sky-200 transition-colors hover:border-sky-300 hover:bg-slate-950"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
                 >
-                  <ArrowLeft className="h-4 w-4" />
-                  Volver a asientos
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  Asientos
                 </button>
               </div>
+
+              <p className="mt-2 text-sm text-slate-300">
+                {bookingContext.asientos?.length
+                  ? bookingContext.asientos.join(', ')
+                  : 'Sin asientos'}
+                <span className="ml-2 text-xs text-slate-500">
+                  ({bookingContext.asientos?.length || 0})
+                </span>
+              </p>
             </div>
           )}
 
@@ -1865,41 +1799,36 @@ export const Dulceria = () => {
                 </div>
               ) : (
                 <>
-                  <div className="mb-6 max-h-96 space-y-4 overflow-y-auto pr-1">
-                    {carrito.map((item) => (
-                      <div key={item.id} className="border-b border-slate-700 pb-4">
-                        <p className="mb-1 font-semibold text-white">{item.nombre}</p>
-                        <p className="mb-3 text-sm text-slate-300">
-                          {item.cantidad} x S/. {item.precio.toFixed(2)}
-                        </p>
-
-                        <div className="flex items-center justify-center gap-2">
+                  <div className="mb-6 max-h-96 space-y-0 overflow-y-auto pr-1">
+                    {carrito.map((item, idx) => (
+                      <div key={item.id} className={`flex items-center gap-3 py-3 ${idx > 0 ? 'border-t border-slate-700/50' : ''}`}>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-white truncate">{item.nombre}</p>
+                          <p className="text-xs text-slate-400">S/. {item.precio.toFixed(2)}</p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
                           <button
                             onClick={() => actualizarCantidad(item.id, item.cantidad - 1)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 font-bold text-black transition-colors hover:bg-yellow-500"
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-700 text-slate-200 transition-colors hover:bg-slate-600"
                           >
-                            <Minus className="h-4 w-4" />
+                            <Minus className="h-3.5 w-3.5" />
                           </button>
-                          <span className="w-8 text-center font-semibold text-white">{item.cantidad}</span>
+                          <span className="w-7 text-center text-sm font-semibold text-white">{item.cantidad}</span>
                           <button
                             onClick={() => actualizarCantidad(item.id, item.cantidad + 1)}
                             disabled={Number.isFinite(item.stock) && item.cantidad >= item.stock}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 font-bold text-black transition-colors hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-700 text-slate-200 transition-colors hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
                           >
-                            <Plus className="h-4 w-4" />
+                            <Plus className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="mb-6 border-t border-slate-700 pt-4">
-                    <div className="mb-4 flex items-center justify-between">
-                      <span className="text-slate-300">Total</span>
-                      <span className="text-2xl font-bold text-white">S/. {total.toFixed(2)}</span>
-                    </div>
+                  <div className="mb-6 border-t border-slate-700/50 pt-4">
                     {isSeatFlow && (
-                      <div className="space-y-2 rounded-xl border border-slate-700 bg-slate-800 p-4 text-sm text-slate-300">
+                      <div className="mb-3 space-y-1.5 text-sm text-slate-400">
                         <div className="flex items-center justify-between">
                           <span>Asientos ({seatsCount})</span>
                           <span>S/. {reservationTotal.toFixed(2)}</span>
@@ -1910,13 +1839,17 @@ export const Dulceria = () => {
                         </div>
                       </div>
                     )}
+                    <div className="flex items-center justify-between border-t border-slate-700/50 pt-3">
+                      <span className="text-sm font-semibold text-slate-300">Total</span>
+                      <span className="text-xl font-bold text-white">S/. {total.toFixed(2)}</span>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 gap-3">
                     {isSeatFlow && (
                       <button
                         onClick={omitirSnacks}
-                        className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
+                        className="w-full rounded-lg border border-slate-600 bg-slate-800 py-3 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700"
                       >
                         Omitir snacks
                       </button>
@@ -1929,7 +1862,7 @@ export const Dulceria = () => {
                           setCheckoutView(checkoutViews.verification);
                         }
                       }}
-                      className="w-full rounded-lg bg-green-600 py-3 font-semibold text-white transition-colors hover:bg-green-700"
+                      className="w-full rounded-lg bg-emerald-600 py-3 font-semibold text-white transition-colors hover:bg-emerald-700"
                     >
                       {isSeatFlow ? 'Confirmar pedido' : 'Pagar dulcería'}
                     </button>

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
+  Bell,
   ChevronDown,
   CircleUserRound,
   Download,
@@ -232,6 +233,8 @@ export const Header = () => {
   const [selectedPurchase, setSelectedPurchase] = useState(null);
   const [purchases, setPurchases] = useState([]);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const session = getAuthSession();
@@ -255,6 +258,16 @@ export const Header = () => {
   useEffect(() => {
     document.body.classList.add('filmate-mobile-nav-active');
     return () => document.body.classList.remove('filmate-mobile-nav-active');
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -430,20 +443,66 @@ export const Header = () => {
                 <NotificationBell />
               </div>
 
-              <button
-                onClick={() => canSeeSocial ? setShowLogoutModal(true) : navigate('/iniciar-sesion')}
-                className={`hidden transform items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl sm:flex sm:px-5 sm:text-base ${
-                  canSeeSocial
-                    ? 'bg-red-500 shadow-red-500/30 hover:bg-red-600 hover:shadow-red-500/40'
-                    : 'bg-blue-600 shadow-blue-600/30 hover:bg-blue-700 hover:shadow-blue-600/40'
-                }`}
-              >
-                {canSeeSocial ? (
-                  <><LogOut className="h-5 w-5" /><span>Cerrar Sesión</span></>
-                ) : (
-                  <><CircleUserRound className="h-5 w-5" /><span>Iniciar sesión</span></>
-                )}
-              </button>
+              {canSeeSocial ? (
+                <div className="relative hidden sm:block" ref={profileMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowProfileMenu((prev) => !prev)}
+                    className="h-10 w-10 overflow-hidden rounded-full border-2 border-sky-400/50 transition-transform hover:scale-110"
+                  >
+                    {session?.user?.url_perfil ? (
+                      <img src={session.user.url_perfil} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-sky-600 text-sm font-black text-white">
+                        {session?.user?.username?.charAt(0).toUpperCase() || '?'}
+                      </div>
+                    )}
+                  </button>
+
+                  {showProfileMenu && (
+                    <div className="absolute right-0 top-full z-[70] mt-3 w-56 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/50">
+                      <div className="border-b border-slate-700 px-4 py-3">
+                        <p className="text-sm font-black text-white">{session?.user?.nombre || session?.user?.username || 'Usuario'}</p>
+                        <p className="mt-0.5 text-xs font-semibold text-slate-400">@{session?.user?.username}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setShowProfileMenu(false); navigate('/social/perfil'); }}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-800"
+                      >
+                        <CircleUserRound className="h-4 w-4 text-sky-300" />
+                        Mi perfil
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setShowProfileMenu(false); navigate('/social/notificaciones'); }}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-800"
+                      >
+                        <Bell className="h-4 w-4 text-sky-300" />
+                        Notificaciones
+                      </button>
+                      <div className="border-t border-slate-700">
+                        <button
+                          type="button"
+                          onClick={() => { setShowProfileMenu(false); setShowLogoutModal(true); }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-red-300 transition-colors hover:bg-red-500/10"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Cerrar sesión
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => navigate('/iniciar-sesion')}
+                  className="hidden transform items-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-blue-700 hover:shadow-xl sm:flex sm:px-5 sm:text-base"
+                >
+                  <CircleUserRound className="h-5 w-5" />
+                  <span>Iniciar sesión</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

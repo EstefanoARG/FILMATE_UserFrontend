@@ -5,7 +5,7 @@ import Header from './Header.jsx';
 import Footer from './Footer.jsx';
 import StarRatingDisplay from './StarRatingDisplay.jsx';
 import { useNavigate } from 'react-router-dom';
-import { getCinemas, getMovies, getRooms, getShowtimesByRange, getPersonalizedRecommendations } from './filmateApi';
+import { getCinemas, getMovies, getRooms, getShowtimesByRange, getPersonalizedRecommendations, normalizeMovie } from './filmateApi';
 import { getAuthSession } from './authSession';
 
 const FALLBACK_MEDIA_IMAGE =
@@ -197,7 +197,7 @@ export const MenuPrincipal = () => {
                 setRecommendationsLoading(true);
                 const data = await getPersonalizedRecommendations(sessionUserId, 3);
                 if (isMounted) {
-                    setRecommendedMovies(data.movies || []);
+                    setRecommendedMovies((data.movies || []).map(normalizeMovie));
                     setRecommendedGenres(data.preferred_genres || []);
                 }
             } catch {

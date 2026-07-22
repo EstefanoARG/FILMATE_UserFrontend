@@ -4,7 +4,7 @@ import PwaInstallButton from './PwaInstallButton.jsx';
 
 const itemDetails = {
   'Quienes somos':
-    'Filmate es una cadena peruana de cines enfocada en funciones digitales, reserva de asientos en tiempo real, dulceria online y una comunidad donde los usuarios pueden calificar peliculas y compartir resenas.',
+    'Filmate es una cadena peruana de cines enfocada en funciones digitales, reserva de asientos en tiempo real, dulcería online y una comunidad donde los usuarios pueden calificar películas y compartir reseñas.',
   'Nuestra historia':
     'Nacimos en Lima con la idea de unir la experiencia de ir al cine con herramientas digitales simples: cartelera actualizada, compra rapida, seleccion de butacas y recomendaciones segun tus gustos.',
   'Contactanos':

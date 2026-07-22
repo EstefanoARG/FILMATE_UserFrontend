@@ -96,6 +96,17 @@ const getShowtimeDateKey = (showtime) => {
     return value ? formatDateKey(new Date(value)) : '';
 };
 
+const formatShowtimeDate = (showtime, forcedDateKey = '') => {
+    const value = getShowtimeDateTime(showtime);
+    if (!value) return 'Fecha por definir';
+
+    const dateKey = forcedDateKey || getShowtimeDateKey(showtime);
+    if (!dateKey) return 'Fecha por definir';
+
+    const [year, month, day] = dateKey.split('-');
+    return `${day}/${month}/${year}`;
+};
+
 const formatShowtimeDateTime = (showtime, forcedDateKey = '') => {
     const value = getShowtimeDateTime(showtime);
     if (!value) return 'Horario por definir';
@@ -910,11 +921,11 @@ export const DetallePelicula = () => {
             }
 
             if (prev.length >= MAX_SEATS_PER_TRANSACTION) {
-                setSeatMapError(`Puedes seleccionar hasta ${MAX_SEATS_PER_TRANSACTION} asientos por compra.`);
+                setSeatLimitToast(true);
                 return prev;
             }
 
-            setSeatMapError('');
+            setSeatLimitToast(false);
             return [...prev, seat];
         });
     };
@@ -1122,7 +1133,7 @@ export const DetallePelicula = () => {
                     <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 sm:px-6 sm:py-6 lg:px-8">
                         <div className="mx-auto w-full max-w-7xl pb-8">
                             <div className="grid gap-4 lg:grid-cols-[340px_1fr] lg:gap-6 lg:items-start">
-                            <aside>
+                            <aside className="seat-selector-panel">
                                 <div className="overflow-hidden rounded-[1.5rem] border-4 border-[#0e1c2c] sm:rounded-[2rem]">
                                     <img
                                         src={poster}
@@ -1143,7 +1154,7 @@ export const DetallePelicula = () => {
                                             {selectedShow.cinema?.nombre_cine || selectedShow.cinema?.nombre || selectedShow.sede?.nombre || 'Sede por definir'}
                                         </p>
                                         <p className="mt-1 text-base font-semibold text-[#5fa6ff] sm:text-2xl">
-                                            {formatShowtimeDateTime(selectedShow, selectedShow?.selectedShowtimeDateKey || selectedShowtimeDateKey)}
+                                            {formatShowtimeDate(selectedShow, selectedShow?.selectedShowtimeDateKey || selectedShowtimeDateKey)}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-3 text-[#5fa6ff]">
@@ -1193,6 +1204,11 @@ export const DetallePelicula = () => {
                                     </div>
                                 </div>
 
+                                {selectedSeats.length > 0 && (
+                                    <div className="mb-3 text-center text-sm font-bold text-emerald-400">
+                                        {selectedSeats.map((s) => `${s.fila}${getSeatNumber(s)}`).join(', ')}
+                                    </div>
+                                )}
                                 {seatMapLoading ? (
                                     <div className="py-20 text-center text-slate-300">Cargando mapa real de asientos...</div>
                                 ) : seatMapError ? (
@@ -1200,18 +1216,7 @@ export const DetallePelicula = () => {
                                         {seatMapError}
                                     </div>
                                 ) : selectedShow?.id_funcion && seatMap.length > 0 ? (
-                                    <>
-                                        <div className="mb-3 flex flex-wrap items-center justify-center gap-3 text-xs text-slate-200">
-                                            <span className="rounded-full border border-slate-600 bg-slate-900/70 px-3 py-1">
-                                                Sala #{selectedShow.id_sala}
-                                            </span>
-                                            <span className="rounded-full border border-slate-600 bg-slate-900/70 px-3 py-1">
-                                                Asientos: {seatMap.length}
-                                            </span>
-                                            <span className="rounded-full border border-slate-600 bg-slate-900/70 px-3 py-1">
-                                                Seleccionados: {selectedSeats.length}
-                                            </span>
-                                        </div>
+                                    <div className="relative">
                                         <div className="-mx-1 overflow-x-auto overscroll-x-contain px-1 pb-3 [scrollbar-width:thin]">
                                             <div
                                                 className="space-y-2 md:space-y-5"
@@ -1254,7 +1259,24 @@ export const DetallePelicula = () => {
                                                 })}
                                             </div>
                                         </div>
-                                    </>
+                                        {seatLimitToast && (
+                                            <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-[#061321]/60 backdrop-blur-[2px]">
+                                                <div className="relative mx-4 w-full max-w-xs rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl text-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSeatLimitToast(false)}
+                                                        className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                    <p className="mb-1 text-xs font-bold uppercase tracking-[0.15em] text-amber-400">Importante</p>
+                                                    <p className="text-sm font-semibold text-slate-200">
+                                                        Puedes seleccionar hasta {MAX_SEATS_PER_TRANSACTION} asientos por compra.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : selectedShow?.id_funcion ? (
                                     <div className="rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-8 text-center text-slate-200">
                                         No hay asientos disponibles para esta función.
@@ -1563,11 +1585,11 @@ export const DetallePelicula = () => {
                             onKeyDown={(event) => handleDialogBackdropKeyDown(event, () => setShowSeatHelp(false))}
                         />
                         <div
-                            className="relative z-10 w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
+                            className="relative z-10 w-full max-w-2xl rounded-3xl border border-slate-700/80 bg-slate-900 shadow-2xl"
                         >
-                            <div className="flex items-center justify-between border-b border-slate-700 px-5 py-4 sm:px-6">
+                            <div className="flex items-center justify-between border-b border-slate-700/60 px-5 py-4 sm:px-6">
                                 <div>
-                                    <p className="text-xs uppercase tracking-[0.3em] text-blue-300">Ayuda</p>
+                                    <p className="text-xs font-bold uppercase tracking-[0.25em] text-amber-400">Ayuda</p>
                                     <h3 className="text-2xl font-bold text-white">Cómo elegir tus asientos</h3>
                                 </div>
                                 <button
@@ -1579,44 +1601,62 @@ export const DetallePelicula = () => {
                             </div>
 
                             <div className="space-y-5 px-5 py-5 text-sm text-slate-200 sm:px-6">
-                                <p>
+                                <p className="text-slate-300">
                                     Elige una función primero y luego selecciona tus asientos desde el mapa.
                                 </p>
 
-                                <div className="space-y-3">
+                                <div className="border-t border-slate-700/50 pt-5">
                                     <div className="flex items-center gap-3">
-                                        <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
-                                            <SeatGlyph seatSize={24} showNumber={false} />
+                                        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-white bg-white">
+                                            <SeatGlyph seatSize={18} showNumber={false} />
                                         </span>
-                                        <span>Disponible: lo puedes seleccionar.</span>
+                                        <div>
+                                            <p className="font-semibold text-white">Disponible</p>
+                                            <p className="text-xs text-slate-400">Tócalo para elegirlo.</p>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#1D9E75] shadow-sm">
-                                            <SeatGlyph seatSize={24} selected showNumber={false} />
+                                    <div className="mt-3 flex items-center gap-3">
+                                        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-emerald-400 bg-emerald-400">
+                                            <SeatGlyph seatSize={18} selected showNumber={false} />
                                         </span>
-                                        <span>Seleccionado: ya lo elegiste para tu compra.</span>
+                                        <div>
+                                            <p className="font-semibold text-white">Seleccionado</p>
+                                            <p className="text-xs text-slate-400">Ya lo tienes apartado.</p>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-red-500 shadow-sm">
-                                            <SeatGlyph seatSize={24} unavailable showNumber={false} />
+                                    <div className="mt-3 flex items-center gap-3">
+                                        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-slate-700 bg-slate-700">
+                                            <SeatGlyph seatSize={18} unavailable showNumber={false} />
                                         </span>
-                                        <span>Ocupado: ya no está disponible.</span>
+                                        <div>
+                                            <p className="font-semibold text-white">Ocupado</p>
+                                            <p className="text-xs text-slate-400">Otro usuario ya lo compró.</p>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="rounded-2xl border border-slate-700 bg-slate-800/80 p-4">
-                                    <h4 className="mb-2 text-base font-semibold text-white">Pasos rápidos</h4>
-                                    <ol className="space-y-2 list-decimal pl-5 text-slate-300">
-                                        <li>Selecciona una función de la película.</li>
-                                        <li>Escoge los asientos disponibles en el mapa.</li>
-                                        <li>Presiona Siguiente para continuar a dulcería.</li>
-                                        <li>Si no quieres snacks, usa la opción Omitir snacks.</li>
-                                    </ol>
+                                <div className="border-t border-slate-700/50 pt-5">
+                                    <h4 className="mb-3 text-base font-semibold text-white">Pasos rápidos</h4>
+                                    <div className="space-y-2">
+                                        {[
+                                            'Elige la función que quieras.',
+                                            'Selecciona tus asientos en el mapa.',
+                                            'Presiona Siguiente y elige snacks (o salta).',
+                                            'Revisa todo y paga.',
+                                        ].map((texto, i) => (
+                                            <div key={i} className="flex items-start gap-2">
+                                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[0.65rem] font-bold text-slate-200">
+                                                    {i + 1}
+                                                </span>
+                                                <p className="text-slate-300">{texto}</p>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
 
-                                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-100">
-                                    Si no aparece el mapa de asientos, esa función no tiene butacas disponibles.
-                                </div>
+                                <p className="border-t border-slate-700/50 pt-5 text-xs text-slate-500">
+                                    Si no ves el mapa de asientos, esa función ya no tiene butacas libres.
+                                </p>
                             </div>
                         </div>
                     </div>
