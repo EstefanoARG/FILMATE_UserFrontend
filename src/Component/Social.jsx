@@ -596,7 +596,7 @@ export const Social = () => {
           id: `review-${review.id}`,
           type: 'review',
           icon: MessageSquareText,
-          title: `Reseno ${review.movie?.titulo || 'una pelicula'}`,
+          title: `Reseñó ${review.movie?.titulo || 'una película'}`,
           detail: review.texto,
           date: review.fechaPublicacion,
           movie: review.movie,
@@ -605,20 +605,20 @@ export const Social = () => {
           const followedName = String(review.usuario || 'Usuario').replace(/^@/, '');
           const hasComment = Boolean(review.texto?.trim());
           const rating = Number(review.rating || 0);
-          const movieTitle = review.movie?.titulo || 'una pelicula';
+          const movieTitle = review.movie?.titulo || 'una película';
 
           return {
             id: `following-review-${review.id}`,
             type: hasComment ? 'following-review' : 'following-rating',
             icon: MessageSquareText,
             title: hasComment
-              ? `@${followedName} reseño ${movieTitle}`
-              : `@${followedName} califico ${movieTitle}`,
+              ? `@${followedName} reseñó ${movieTitle}`
+              : `@${followedName} calificó ${movieTitle}`,
             detail: hasComment
               ? review.texto
               : rating > 0
                 ? `Le dio ${rating} de 5 estrellas.`
-                : 'Registro una calificacion.',
+                : 'Registró una calificación.',
             date: review.fechaPublicacion,
             movie: review.movie,
           };
@@ -643,7 +643,7 @@ export const Social = () => {
               id: `favorite-${item.id_pelicula}`,
               type: 'favorite',
               icon: Heart,
-              title: `Marco como favorita ${interactionMovie?.titulo || 'una pelicula'}`,
+              title: `Marcó como favorita ${interactionMovie?.titulo || 'una película'}`,
               detail: 'Agregada a su lista completa de favoritas.',
               date: item.fecha_favorito || item.fecha_actualizacion || item.fecha_creacion,
               movie: interactionMovie,
@@ -655,8 +655,8 @@ export const Social = () => {
               id: `watched-${item.id_pelicula}`,
               type: 'watched',
               icon: Eye,
-              title: `Marco como vista ${interactionMovie?.titulo || 'una pelicula'}`,
-              detail: 'Registrada en peliculas vistas.',
+              title: `Marcó como vista ${interactionMovie?.titulo || 'una película'}`,
+              detail: 'Registrada en películas vistas.',
               date: item.fecha_vista || item.fecha_actualizacion || item.fecha_creacion,
               movie: interactionMovie,
             });
@@ -682,8 +682,8 @@ export const Social = () => {
             id: `following-${followedId || followedName}`,
             type: 'following',
             icon: UserPlus,
-            title: `Comenzo a seguir a @${String(followedName).replace(/^@/, '')}`,
-            detail: 'Nueva conexion social.',
+            title: `Comenzó a seguir a @${String(followedName).replace(/^@/, '')}`,
+            detail: 'Nueva conexión social.',
             date: item.fecha_seguimiento || item.fecha_creacion,
           };
         });
@@ -970,14 +970,14 @@ export const Social = () => {
   };
 
   const watchedFilterOptions = [
-    { id: 'all', label: 'Todas', title: 'Peliculas Vistas' },
-    { id: 'best', label: 'Mejor calificadas', title: 'Peliculas mejor calificadas' },
-    { id: 'low', label: 'Menor calificadas', title: 'Peliculas menor calificadas' },
-    { id: 'unrated', label: 'Sin calificacion', title: 'Peliculas vistas sin calificacion' },
+    { id: 'all', label: 'Todas', title: 'Películas Vistas' },
+    { id: 'best', label: 'Mejor calificadas', title: 'Películas mejor calificadas' },
+    { id: 'low', label: 'Menor calificadas', title: 'Películas menor calificadas' },
+    { id: 'unrated', label: 'Sin calificación', title: 'Películas vistas sin calificación' },
   ];
   const watchedTitle =
     watchedFilterOptions.find((option) => option.id === watchedFilter)?.title ||
-    'Peliculas Vistas';
+    'Películas Vistas';
   const displayedWatchedMovies = watchedMovies
     .filter((movie) => {
       const rating = getUserMovieRating(movie);
@@ -997,7 +997,7 @@ export const Social = () => {
     const roundedRating = Math.round(Number(rating || 0));
 
     return (
-      <div className="mt-2 flex h-5 items-center justify-center gap-0.5" aria-label={rating ? `${rating} de 5 estrellas` : 'Sin calificacion'}>
+      <div className="mt-2 flex h-5 items-center justify-center gap-0.5" aria-label={rating ? `${rating} de 5 estrellas` : 'Sin calificación'}>
         {Array.from({ length: 5 }).map((_, index) => {
           const starValue = index + 1;
           const selected = starValue <= roundedRating;
@@ -1071,7 +1071,7 @@ export const Social = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#020b16] text-white">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       <Header />
 
       <main className="flex flex-1 flex-col">

@@ -29,4 +29,7 @@ code {
     overflow-y: auto;
     scrollbar-gutter: stable;
   }
+  #root aside.seat-selector-panel {
+    max-height: none;
+  }
 }

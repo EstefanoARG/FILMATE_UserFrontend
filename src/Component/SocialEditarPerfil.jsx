@@ -340,7 +340,7 @@ export const SocialEditarPerfil = () => {
   const displayName = profile?.username || sessionUser?.username || 'usuario';
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#020b16] text-white">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       <Header />
 
       <main className="flex min-h-[calc(100vh-5rem)] flex-1 px-4 py-6 sm:px-6 lg:px-8">
@@ -665,7 +665,7 @@ export const SocialEditarPerfil = () => {
                   value={movieQuery}
                   onChange={(event) => setMovieQuery(event.target.value)}
                   className="ml-3 min-w-0 flex-1 bg-transparent text-white outline-none placeholder:text-white/45"
-                  placeholder="Buscar pelicula"
+                  placeholder="Buscar película"
                 />
               </label>
             </div>

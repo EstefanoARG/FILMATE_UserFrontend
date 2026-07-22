@@ -60,17 +60,7 @@ export default function NotificationBell({ variant = 'header' }) {
   }, []);
 
   const handleToggle = () => {
-    if (!open) {
-      setOpen(true);
-      const unreadIds = notifications.filter((n) => !n.leida).map((n) => n.id_actividad);
-      if (unreadIds.length) {
-        markNotificationsRead(userId, unreadIds).catch(() => {});
-        setUnreadCount(0);
-        setNotifications((prev) => prev.map((n) => ({ ...n, leida: true })));
-      }
-    } else {
-      setOpen(false);
-    }
+    setOpen((prev) => !prev);
   };
 
   const handleMarkAllRead = () => {
@@ -81,6 +71,9 @@ export default function NotificationBell({ variant = 'header' }) {
 
   const handleNotificationClick = (notif) => {
     setOpen(false);
+    if (!notif.leida) {
+      markNotificationsRead(userId, [notif.id_actividad]).catch(() => {});
+    }
     if (notif.id_referencia_resena) {
       navigate(`/social/resena/${notif.id_referencia_resena}`);
     } else if (notif.actor_id) {
@@ -169,6 +162,13 @@ export default function NotificationBell({ variant = 'header' }) {
                 </button>
               ))
             )}
+            <button
+              type="button"
+              onClick={() => { setOpen(false); navigate('/social/notificaciones'); }}
+              className="w-full border-t border-slate-700 px-4 py-3 text-center text-sm font-bold text-sky-400 transition-colors hover:bg-slate-800"
+            >
+              Ver todas
+            </button>
           </div>
         </div>
       )}

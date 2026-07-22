@@ -178,6 +178,7 @@ frontend-user/
 │   │   ├── Header.jsx
 │   │   ├── IniciarSesion.jsx
 │   │   ├── MenuPrincipal.jsx
+│   │   ├── NotificacionesPage.jsx
 │   │   ├── NotificationBell.jsx
 │   │   ├── peliculas.js
 │   │   ├── ProtectedRoute.jsx
@@ -232,6 +233,7 @@ frontend-user/
 | `/social/perfil/:profileUserId` | Perfil de otro usuario | Si (usuario registrado) |
 | `/social/editarPerfil` | Editar perfil y biografia | Si (usuario registrado) |
 | `/social/pelicula/:movieId` | Detalle de pelicula en contexto social | Si (usuario registrado) |
+| `/social/notificaciones` | Pagina de notificaciones | Si (usuario registrado) |
 | `/social/resena/:reviewId` | Resena individual | Si (usuario registrado) |
 | `*` | Pagina 404 (Error personalizado) | No |
 

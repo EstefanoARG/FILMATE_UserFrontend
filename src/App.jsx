@@ -14,6 +14,7 @@ const Social = lazy(() => import('./Component/Social.jsx'));
 const SocialEditarPerfil = lazy(() => import('./Component/SocialEditarPerfil.jsx'));
 const SocialPelicula = lazy(() => import('./Component/SocialPelicula.jsx'));
 const SocialResena = lazy(() => import('./Component/SocialResena.jsx'));
+const NotificacionesPage = lazy(() => import('./Component/NotificacionesPage.jsx'));
 const DetallePelicula = lazy(() => import('./Component/DetallePelicula.jsx'));
 
 const PageLoader = () => (
@@ -92,6 +93,14 @@ function App() {
           element={
             <ProtectedRoute requireRegistered>
               <SocialResena />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/social/notificaciones"
+          element={
+            <ProtectedRoute requireRegistered>
+              <NotificacionesPage />
             </ProtectedRoute>
           }
         />

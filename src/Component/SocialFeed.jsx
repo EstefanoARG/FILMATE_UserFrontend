@@ -5,6 +5,7 @@ import { getAuthSession } from './authSession';
 import { getSocialFeed } from './filmateApi';
 import TrendingMovies from './TrendingMovies';
 import SuggestedUsers from './SuggestedUsers';
+import Header from './Header.jsx';
 
 const renderStars = (rating) => {
   if (!rating) return null;
@@ -211,67 +212,13 @@ export const SocialFeed = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white pt-20">
+      <div className="fixed left-0 right-0 top-0 z-50">
+        <Header />
+      </div>
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
-        <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-8">
-          <div className="min-w-0">
-            <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/menuPrincipal')}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-slate-300 transition-colors hover:bg-slate-700"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="text-2xl font-black text-white">Social</h1>
-              <p className="text-xs font-semibold text-slate-500">Descubre lo que opina la comunidad</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate('/social/perfil')}
-            className="group shrink-0"
-          >
-            <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-sky-400/50 bg-slate-700 transition-colors group-hover:border-sky-400">
-              {userProfile?.url_perfil ? (
-                <img src={userProfile.url_perfil} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm font-bold text-slate-300">
-                  {userProfile?.nombre?.charAt(0)?.toUpperCase() || '?'}
-                </div>
-              )}
-            </div>
-          </button>
-        </div>
-
-        <div className="mb-6 flex border-b border-slate-700/50">
-          <button
-            type="button"
-            onClick={() => setTab('feed')}
-            className={`relative px-4 py-2.5 text-sm font-bold transition-colors ${
-              tab === 'feed' ? 'text-white' : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            Feed
-            {tab === 'feed' && (
-              <span className="absolute bottom-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-sky-400" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setTab('perfil'); navigate('/social/perfil'); }}
-            className={`relative px-4 py-2.5 text-sm font-bold transition-colors ${
-              tab === 'perfil' ? 'text-white' : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            Perfil
-            {tab === 'perfil' && (
-              <span className="absolute bottom-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-sky-400" />
-            )}
-          </button>
-        </div>
+        <div className="lg:pr-[312px]">
+          <h1 className="mb-6 text-2xl font-black text-white">Feed</h1>
 
         {loading ? (
           <div className="space-y-4">
@@ -325,16 +272,18 @@ export const SocialFeed = () => {
             ))}
           </div>
         )}
-          </div>
-
-          <aside className="hidden lg:block">
-            <div className="sticky top-28 space-y-8">
-              <TrendingMovies />
-              <SuggestedUsers />
-            </div>
-          </aside>
         </div>
       </div>
+
+      <aside
+        className="hidden fixed top-28 w-[280px] lg:block"
+        style={{ right: 'max(24px, calc(50vw - 552px))' }}
+      >
+        <div className="space-y-8">
+          <TrendingMovies />
+          <SuggestedUsers />
+        </div>
+      </aside>
     </div>
   );
 };

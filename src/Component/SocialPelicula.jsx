@@ -330,12 +330,12 @@ export const SocialPelicula = () => {
     }
 
     if (hasWrittenReview) {
-      setReviewError('Ya publicaste una reseña para esta pelicula.');
+      setReviewError('Ya publicaste una reseña para esta película.');
       return;
     }
 
     if (!personalRating) {
-      setReviewError('Primero selecciona tu calificacion en estrellas.');
+      setReviewError('Primero selecciona tu calificación en estrellas.');
       return;
     }
 
@@ -540,7 +540,7 @@ export const SocialPelicula = () => {
   const visiblePersonalRating = hoveredPersonalRating || personalRating;
 
   return (
-    <div className="min-h-screen bg-[#020b16] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       <Header />
 
       <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -719,7 +719,7 @@ export const SocialPelicula = () => {
 
                   {hasWrittenReview && (
                     <div className="mt-5 rounded-lg border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm font-semibold text-amber-100">
-                      Ya publicaste una reseña para esta pelicula.
+                      Ya publicaste una reseña para esta película.
                     </div>
                   )}
 
