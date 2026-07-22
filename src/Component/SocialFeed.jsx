@@ -41,6 +41,7 @@ const formatDate = (dateStr) => {
 const ReviewCard = ({ item, onUserClick, onMovieClick, onReviewClick }) => {
   const [liked, setLiked] = useState(item.liked_by_me);
   const [likesCount, setLikesCount] = useState(item.total_likes);
+  const [expanded, setExpanded] = useState(false);
 
   const handleLike = async () => {
     try {
@@ -89,12 +90,25 @@ const ReviewCard = ({ item, onUserClick, onMovieClick, onReviewClick }) => {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-bold text-white">{item.pelicula?.titulo || 'Película'}</h3>
+          <h3 className="text-sm font-bold text-white text-left">{item.pelicula?.titulo || 'Película'}</h3>
           {item.puntuacion_estrellas && (
             <div className="mt-1">{renderStars(item.puntuacion_estrellas)}</div>
           )}
           {item.comentario && (
-            <p className="mt-2 line-clamp-3 text-sm text-slate-300">{item.comentario}</p>
+            <>
+              <p className={`mt-2 text-sm text-slate-300 ${!expanded ? 'line-clamp-6' : ''}`}>
+                {item.comentario}
+              </p>
+              {item.comentario.length > 300 && !expanded && (
+                <button
+                  type="button"
+                  onClick={() => onReviewClick(item.id)}
+                  className="mt-1 text-xs font-semibold text-sky-400 hover:text-sky-300 transition-colors"
+                >
+                  Ver reseña completa
+                </button>
+              )}
+            </>
           )}
         </div>
       </button>

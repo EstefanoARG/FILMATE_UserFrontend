@@ -57,7 +57,7 @@ export const Cines = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       <Header />
 
-      <main className="w-full flex-1 px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <main className="w-full flex-1 max-w-7xl mx-auto px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <h1 className="mb-8 text-center text-3xl font-bold text-white sm:mb-12 sm:text-4xl">Nuestros locales</h1>
 
         {error && (
